@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block body %}
+<span class="report_header">PGx-analysrapport (NGS) - {{ group }}</span>
+
+<div class="report_div">
+  <table class='report_general'> 
+    <tr>
+      <td class="report_key">Patientnamn</td><td class="report_val">&lt;PATIENT_NAME&gt;</td>
+    </tr>
+    <tr>
+      <td class="report_key">Personnummer</td><td class="report_val">&lt;PERSONAL_IDENTITY_NUMBER&gt;</td>
+    </tr>
+    <tr>
+      <td class="report_key">Prov-ID</td><td class="report_val">{{ group }}</td>
+    </tr>
+    <tr>
+      <td class="report_key">Registreringsdatum</td><td class="report_val">&lt;REGISTRATION_DATE&gt;</td>
+    </tr>
+    <tr>
+      <td class="report_key">Provtyp</td><td class="report_val">&lt;SAMPLE_TYPE&gt;</td>
+    </tr>
+    <tr>
+      <td class="report_key">Frågeställning</td><td class="report_val">PGx (DPYD, TMPT, NUDT15)</td>
+    </tr>
+    <tr>
+      <td class="report_key">Analysmetod</td><td class="report_val">NGS med PGx</td>
+    </tr>
+    <tr>
+      <td class="report_key">Analys genomförd av</td><td class="report_val">Centrum för molekylär diagnostik (CMD) och Klinisk genetik och patologi</td>
+    </tr>
+    <tr>
+      <td class="report_key">Rapportdatum</td><td class="report_val">{{ date }}</td>
+    </tr>
+  </table>
+</div>
+
+<div class=report_div style="page-break-inside:avoid;">
+  <span class="report_header">Slutsats - Kliniska rekommendationer baserad på genotyper</span>
+  <table class='variant_table'>
+    <tr>
+      <th>Gen</th>
+      <th>Haplotyp</th>
+      <th>Klinisk Rekommendation</th>
+    </tr>
+    {% if report_guidelines is not none %}
+      {% for row in report_guidelines %}
+          <td>{{ row[0] }}</td>
+          <td>{{ row[1] }}</td>
+          <td>{{ row[2] }}</td>
+        </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td colspan="7">Inga detekterade varianter/rekommendationer</td>
+      </tr>
+    {% endif %}
+  </table>
+  <br>
+  <p style="font-size: 12px">Vid frågor ring telefonnumret 046 - 174620 (helgfria vardagar 10:00 - 16:00) Läkemedelsinformationscentral.</p>
+</div>
+
+<div class=report_div style="page-break-before: always;">
+  <span class="report_header">Kliniskt relevanta varianter upptäckta</span>
+  <table class='variant_table'>
+    <tr>
+      <th>Gen</th>
+      <th>rsID</th>
+      <th>Möjliga Haplotyper</th>
+      <th>Position</th>
+      <th>Zygositet</th>
+      <th>Variant frekvens</th>
+      <th>Möjlig Duplikation</th>
+    </tr>
+    {% if clincial_variants is not none %}
+      {% for row in clincial_variants %}
+        {% if row['Possible Duplication'] == true %}
+          <tr style="text-align:left;background-color: #FFE6E6 !important;" >
+        {% else %}
+          <tr>
+        {% endif %}
+          <td>{{ row['Gene'] }}</td>
+          <td>{{ row['rsID'] }}</td>
+          <td>{{ row['Possible Haplotypes'] }}</td>
+          <td>{{ row['Position'] }}</td>
+          <td>{{ row['Zygosity'] }}</td>
+          <td>{{ row['Variant Frequency'] }}</td>
+          <td>{{ row['Possible Duplication'] }}</td>
+        </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td colspan="7">Inga detekterade varianter</td>
+      </tr>
+    {% endif %}
+  </table>
+</div>
+
+<div class=report_div style="page-break-inside:avoid;">
+  <span class="report_header">Mål med lågt läsdjup</span>
+  <table class='variant_table'>
+    <tr>
+      <th>rsID</th>
+      <th>Haplotyp</th>
+      <th>Position</th>
+      <th>Läsjup</th>
+    </tr>
+    {% if low_depth_targets is not none %}
+      {% for row in low_depth_targets %}
+        <tr>
+          <td>{{ row['rsID'] }}</td>
+          <td>{{ row['Haplotype'] }}</td>
+          <td>{{ row['Position'] }}</td>
+          <td>{{ row['Read Depth'] }}</td>
+        </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td colspan="4">Alla analyserade regioner har ett läsdjup på ≥ {{ read_depth }}x (PGX_QC_PASS)</td>
+      </tr>
+    {% endif %}
+  </table>
+</div>
+
+<div class="analysis_description" style="page-break-inside:avoid;">
+  <span class="report_header">Analysbeskrivning</span>
+  <p>
+    Paired-end sekvensering (Illumina) av en nationellt framtagen genpanel (Farmakogenetik (PGx), Twist custom panel). Den aktuella analysen täcker de genetiska varianter som nämns i tabell 1. I tabell 2 finns alla de genetiska varianter som ingår i PGx panelen. Framtida kunskap kan komma att modifiera aktuell tolkning.
+  </p>
+</div>
+<div class="analysis_description" style="page-break-inside:avoid;">
+  {% if gene_list is not none %}
+    <p><b>Tabell 1: Gener som ingår i PGx-analysen</b></p>
+    <table class="genetable">
+      <tr>
+        {% for gene in gene_list %}
+          <td>
+            {{ gene }}
+          </td>
+          {% if loop.index % 10 == 0 %}
+            </tr><tr>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </table>
+  {% endif %}
+</div>
+<div class="analysis_description" style="page-break-inside:avoid;">
+  {% if targets is not none %}
+    <p><b>Tabell 2: Haplotyper som ingår i PGx-analysen</b></p>
+    <table class="genetable">
+      <tr>
+        {% for target in targets %}
+          <td>
+            {{ targets[target] }}({{ target }})
+          </td>
+          {% if loop.index % 5 == 0 %}
+            </tr><tr>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </table>
+  {% endif %}
+</div>
+
+<div class="analysis_description" style="page-break-inside:avoid;">
+  <p>
+    <b>Referenser</b><p>
+    [1] Standards and guidelines for the interpretation and reporting of sequence variants in cancer. Li et al, Journal of Molecular Diagnostics, 2017.
+  </p>
+</div>
+
+{% endblock %}

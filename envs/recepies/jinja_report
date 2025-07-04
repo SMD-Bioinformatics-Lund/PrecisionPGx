@@ -1,0 +1,11 @@
+Bootstrap: docker
+From: ubuntu:jammy
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get -y update
+    apt-get -y install python3
+    apt-get -y install python3-pip
+    apt-get -y install zlib1g-dev libbz2-dev liblzma-dev libpango-1.0-0 libgirepository1.0-dev libpangocairo-1.0-0
+    pip3 install Pillow==10.1.0 Pyphen==0.14.0 argparse==1.4.0 brotli==1.1.0 cffi==1.16.0 cssselect2==0.7.0 fonttools==4.45.1 html5lib==1.1 jinja2==3.1.2 numpy==1.26.2 packaging==23.2 pandas==2.1.3 plotly==5.18.0 pycparser==2.21 pydyf==0.8.0 pysam==0.22.0 python-dateutil==2.8.2 pytz==2023.3.post1 six==1.16.0 tenacity==8.2.3 tinycss2==1.2.1 tzdata==2023.3 weasyprint==60.1 webencodings==0.5.1 zopfli==0.2.3 contourpy==1.2.0  cycler==0.12.1 kiwisolver==1.4.5 matplotlib==3.8.2 pyparsing==3.1.1

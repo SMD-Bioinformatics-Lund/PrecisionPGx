@@ -1,0 +1,3 @@
+clarity_sample_id,id,type,assay,group,bam,bai,purity
+XXXXXXX,Sample1,T,solid-pgx,Sample1,/path/to/Sample1.bam,/path/to/Sample1.bam.bai,0.30
+XXXXXXX,Sample2,T,solid-pgx,Sample2,/path/to/Sample2.bam,/path/to/Sample2.bam.bai,0.30

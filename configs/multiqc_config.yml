@@ -1,0 +1,44 @@
+title: "Pharmacogenomics (PGx) MultiQC Report"
+subtitle: "MultiQC report for Pharmacogenomics (PGx) analysis"
+intro_text: "MultiQC reports summarize analysis results for Pharmacogenomics studies."
+report_comment: "This report provides a comprehensive overview of the analysis QC results."
+show_analysis_paths: False
+show_analysis_time: True
+custom_logo_url: "https://vardgivare.skane.se/kompetens-utveckling/sakkunniggrupper/centrum-for-molekylar-diagnostik-cmd/"
+custom_logo_title: "Centrum för molekylär diagnostik (CMD)"
+
+
+report_header_info:
+    - Sample ID: "REPLACE_SAMPLE_ID"
+    - Application Type: "Pharmacogenomics (PGx)"
+    - Gene Panel: "PGx Panel"
+    - Targets Screend: "TPMT, DPYD, NUDT15 - 19 SNPS"
+    - Pipeline: "[PGxModule](https://github.com/Clinical-Genomics-Lund/PGxModule)"
+    - Sequencing Platform: "Illumina"
+    - Contact E-mail: "Ram.Nanduri@skane.se"
+    - Analysed At: "Centrum för molekylär diagnostik (CMD), Sölvegatan 23B, Lund, Skane, Sweden"
+
+
+report_section_order:
+    software_versions:
+        order: -1000
+
+
+custom_content:
+    order:
+    - target_depth_stats
+
+
+custom_data:
+    target_depth_stats:
+        id: 'target_depth_stats'
+        section_name: 'Depth at Targets'
+        plot_type: 'table'
+        pconfig:
+            id: 'target_depth_stats'
+            namespace: 'Target Depth Stats'
+
+
+sp:
+    target_depth_stats:
+        fn: "*.targets.depth.tsv"

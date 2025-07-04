@@ -1,0 +1,70 @@
+Bootstrap: docker
+From: debian:bookworm-slim
+
+%environment
+    export PYTHONDONTWRITEBYTECODE=1
+    export GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305
+    export PYTHON_VERSION=3.13.2
+    export PYTHON_SHA256=d984bcc57cd67caab26f7def42e523b1c015bbc5dc07836cf4f0b63fa159eb56
+
+%post
+#!/bin/bash
+set -eux
+
+# Manually set environment variables in %post since they are not inherited
+PYTHON_VERSION=3.13.2
+PYTHON_SHA256=d984bcc57cd67caab26f7def42e523b1c015bbc5dc07836cf4f0b63fa159eb56
+GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305
+
+# Install runtime dependencies
+apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates netbase tzdata && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install build dependencies and utilities
+apt-get update && apt-get install -y --no-install-recommends \
+    dpkg-dev gcc gnupg libbluetooth-dev libbz2-dev libc6-dev libdb-dev \
+    libffi-dev libgdbm-dev liblzma-dev libncursesw5-dev libreadline-dev \
+    libsqlite3-dev libssl-dev make tk-dev uuid-dev wget xz-utils zlib1g-dev
+
+# Download and verify Python source
+wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz"
+echo "$PYTHON_SHA256 *python.tar.xz" | sha256sum -c -
+wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc"
+
+GNUPGHOME="$(mktemp -d)"
+export GNUPGHOME
+gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "$GPG_KEY"
+gpg --batch --verify python.tar.xz.asc python.tar.xz
+gpgconf --kill all
+rm -rf "$GNUPGHOME" python.tar.xz.asc
+
+# Extract and compile Python as a STATIC BINARY (no shared libraries)
+mkdir -p /usr/src/python
+tar --extract --directory /usr/src/python --strip-components=1 --file python.tar.xz
+rm python.tar.xz
+cd /usr/src/python
+gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"
+
+# **Key Fix: Remove --enable-shared to avoid external dependencies**
+./configure --build="$gnuArch" \
+            --disable-shared \
+            --enable-optimizations \
+            --enable-option-checking=fatal \
+            --with-lto \
+            --with-ensurepip
+
+make -j "$(nproc)"
+make install
+cd /
+rm -rf /usr/src/python
+
+# Ensure Python is correctly installed
+python3 --version
+which python3
+ldd $(which python3) || true  # Debug: Check if it’s still dynamically linked
+
+# Explicitly use python3 -m pip to avoid missing binary issues
+python3 -m ensurepip
+python3 -m pip install --upgrade pip setuptools wheel
+python3 -m pip install pandas numpy matplotlib
