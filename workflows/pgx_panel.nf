@@ -9,21 +9,6 @@ include { VARIANT_FILTRATION            } from '../subworkflows/local/variant_fi
 include { COVERAGE                      } from '../subworkflows/local/coverage'
 include { PHARMCAT                      } from '../subworkflows/local/pharmcat'
 include { CYP2D6_CNVCALL                } from '../subworkflows/local/cnv'
-
-
-
-// include { QC                            } from '../subworkflows/local/qc'
-// include { PADDED_INTERVALS              } from '../subworkflows/local/padded_intervals'
-// include { HAPLOTYPING                   } from '../subworkflows/local/haplotyping'
-// include { ONTARGET                      } from '../subworkflows/local/ontarget'
-// include { ANNOTATION                    } from '../subworkflows/local/annotations'
-// include { PHARMCAT                      } from '../subworkflows/local/pharmcat'
-// include { COVERAGE                      } from '../subworkflows/local/coverage'
-// include { CLINICAL_INFORMATION          } from '../subworkflows/local/clinical_information'
-// include { PGX_REPORT                    } from '../subworkflows/local/reports'
-// include { CUSTOM_DUMPSOFTWAREVERSIONS   } from '../modules/local/custom/dumpsoftwareversions/main'
-// include { TEST_FASTQ   } from '../modules/local/test/main'
-// include { TEST_BAM   } from '../modules/local/test/main'
 include { RUN_MULTIQC                   } from '../subworkflows/local/multiqc'
 
 csv = file(params.csv)
@@ -38,9 +23,6 @@ workflow PGX_PANEL {
 
     main:
         ch_versions = Channel.empty()
-
-        // TEST_FASTQ ( fastq_input )
-        // TEST_BAM ( bam_input )
 
         // Preprocessing Fastq (subsample and trim)
         PREPROCESS_FASTQ ( fastq_input ).set { fastq_processed }
