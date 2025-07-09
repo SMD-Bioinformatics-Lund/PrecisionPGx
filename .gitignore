@@ -39,3 +39,4 @@ bin/pdf.py
 subworkflows/local/pharmacoGenomics.nf.backup
 deploy_hopper_dev.sh
 transfer.log
+docs/_build/
