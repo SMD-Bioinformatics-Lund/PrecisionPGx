@@ -4,6 +4,8 @@ include { SENTIEON_BWA_UMI          } from '../../modules/local/sentieon/main'
 include { SENTIEON_MARKDUP          } from '../../modules/local/sentieon/main'
 include { SENTIEON_BQSR_UMI         } from '../../modules/local/sentieon/main'
 include { SENTIEON_QC               } from '../../modules/local/sentieon/main'
+include { SENTIEON_QC_TO_CDM        } from '../../modules/local/sentieon/main'
+
 
 
 workflow ALIGN {
@@ -25,10 +27,13 @@ workflow ALIGN {
         SENTIEON_QC ( SENTIEON_MARKDUP.out.bam_qc )
         ch_versions = ch_versions.mix(SENTIEON_QC.out.versions)
 
+        SENTIEON_QC_TO_CDM (SENTIEON_QC.out.qc_files)
+        // ch_versions = ch_versions.mix(SENTIEON_QC_TO_CDM.out.versions)
+
     emit:
         bam_lowcov              =   SENTIEON_MARKDUP.out.bam_qc             // channel: [ val(group), val(meta), file(bam), file(bai), file(dedup_metrics.txt) ]
         bam_umi                 =   SENTIEON_BQSR_UMI.out.bam_varcall       // channel: [ val(group), val(meta), file(bam), file(bai), file(bqsr.table) ]
-        qc_out                  =   SENTIEON_QC.out.qc_cdm                  // channel: [ val(group), val(meta), file(QC) ]
+        qc_out                  =   SENTIEON_QC_TO_CDM.out.qc_cdm                  // channel: [ val(group), val(meta), file(QC) ]
         dedup_bam_is_metrics    =   SENTIEON_QC.out.dedup_bam_is_metrics    // channel: [ val(group), val(meta), file(is_metrics.txt) ]    
         bam_dedup               =   SENTIEON_MARKDUP.out.bam_bqsr           // channel: [ val(group), val(meta), file(bam), file(bai)] 
         versions                =   ch_versions                             // channel: [ file(versions) ]

@@ -8,7 +8,7 @@ include { VARIANT_CALLING               } from '../subworkflows/local/variant_ca
 include { VARIANT_FILTRATION            } from '../subworkflows/local/variant_filtration'
 include { COVERAGE                      } from '../subworkflows/local/coverage'
 include { PHARMCAT                      } from '../subworkflows/local/pharmcat'
-include { CYP2D6_CNVCALL                } from '../subworkflows/local/cnv'
+// include { CYP2D6_CNVCALL                } from '../subworkflows/local/cnv'
 include { RUN_MULTIQC                   } from '../subworkflows/local/multiqc'
 
 csv = file(params.csv)
@@ -51,8 +51,8 @@ workflow PGX_PANEL {
         ch_versions = ch_versions.mix(PHARMCAT.out.versions)
 
         // CNV calling CYP2D6
-        CYP2D6_CNVCALL ( COVERAGE.out.cnv_depth )
-        ch_versions = ch_versions.mix(CYP2D6_CNVCALL.out.versions)
+        // CYP2D6_CNVCALL ( COVERAGE.out.cnv_depth )
+        // ch_versions = ch_versions.mix(CYP2D6_CNVCALL.out.versions)
 
     
         // Multiqc
