@@ -20,12 +20,14 @@ process FREEBAYES {
 
         filter_freebayes_unpaired.pl ${prefix}.vcf1 > ${prefix}.vcf
 
-        bgzip -c ${prefix}.vcf > ${prefix}.vcf.gz
+        bcftools sort ${prefix}.vcf -Oz -o ${prefix}.vcf.gz
+
         tabix -p vcf ${prefix}.vcf.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
+            bcftools: \$(echo \$(bcftools --version 2>&1 | head -n1) | sed 's/bcftools\s*v//g' )
             perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
         END_VERSIONS
         """
@@ -38,6 +40,7 @@ process FREEBAYES {
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
+            bcftools: \$(echo \$(bcftools --version 2>&1 | head -n1) | sed 's/bcftools\s*v//g' )
             perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
         END_VERSIONS
         """

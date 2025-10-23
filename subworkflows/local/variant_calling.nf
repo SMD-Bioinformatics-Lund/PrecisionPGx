@@ -1,4 +1,5 @@
 include { SENTIEON_HAPLOTYPING                      } from '../../modules/local/sentieon/main'
+include { BGZIP as SENTIEON_HAPLOTYPING_BGZIP       } from '../../modules/local/bgzip/main'
 include { GATK_HAPLOTYPING                          } from '../../modules/local/gatk/main'
 include { FREEBAYES                                 } from '../../modules/local/freebayes/main'
 include { BCFTOOLS_CALL                             } from '../../modules/local/bcftools/main'
@@ -22,7 +23,11 @@ workflow VARIANT_CALLING {
         SENTIEON_HAPLOTYPING ( bam_ch )
         ch_versions = ch_versions.mix(SENTIEON_HAPLOTYPING.out.versions)
 
-        NORM_SENTIEON ( SENTIEON_HAPLOTYPING.out.haplotypes, "sentieon" ).set { ch_sentieon_vcf }
+        // BGZIP and TABIX Sentieon VCF
+        SENTIEON_HAPLOTYPING_BGZIP( SENTIEON_HAPLOTYPING.out.haplotypes )
+        ch_versions = ch_versions.mix(SENTIEON_HAPLOTYPING_BGZIP.out.versions)
+
+        NORM_SENTIEON ( SENTIEON_HAPLOTYPING_BGZIP.out.compressed_vcf, "sentieon" ).set { ch_sentieon_vcf }
         ch_versions = ch_versions.mix(ch_sentieon_vcf.versions)
         
         // GATK haplotyping

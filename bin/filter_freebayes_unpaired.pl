@@ -10,6 +10,11 @@ my $vcf = vcf2->new('file'=>$ARGV[0] );
 
 #TODO ADD INFO HEADER STRINGS PROPERLY!
 system("zgrep ^## $ARGV[0]");
+# Now inject your new FILTER definitions:
+print "##FILTER=<ID=.,Description=\"No filtering applied\">\n";
+print "##FILTER=<ID=FAIL_GT,Description=\"Tumor sample has homozygous reference genotype (0/0)\">\n";
+print "##FILTER=<ID=WARN_NOVAR,Description=\"Tumor genotype has no ALT allele\">\n";
+print "##FILTER=<ID=WARN_MQ,Description=\"Low mapping quality (MQM <= 10)\">\n";
 system("zgrep ^#CHROM $ARGV[0]");
 
 while ( my $v = $vcf->next_var() ) {

@@ -358,8 +358,8 @@ process SENTIEON_HAPLOTYPING {
         tuple val(group), val(meta), file(bam), file(bai)
 
     output:
-        tuple val(group), val(meta), file("*.haplotypes.vcf.gz"), file("*.haplotypes.vcf.gz.tbi"),  emit: haplotypes
-        path "versions.yml",                                                                        emit: versions
+        tuple val(group), val(meta), file("*.haplotypes.vcf"),  emit: haplotypes
+        path "versions.yml",                                    emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -370,27 +370,21 @@ process SENTIEON_HAPLOTYPING {
         def prefix      = task.ext.prefix ?: "${meta.group}.sentieon"
         """
         sentieon driver -t ${task.cpus} $args -i $bam --algo Haplotyper $args2 ${prefix}.haplotypes.vcf
-        bgzip -c ${prefix}.haplotypes.vcf > ${prefix}.haplotypes.vcf.gz
-        tabix ${prefix}.haplotypes.vcf.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-            bgzip: \$(bgzip --v | grep 'bgzip' | sed 's/.* //g')
-            tabix: \$(echo \$(tabix -h 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
         END_VERSIONS
         """
 
     stub:
         def prefix = task.ext.prefix ?: "${meta.group}.sentieon"
         """
-        touch ${prefix}.haplotypes.vcf.gz ${prefix}.haplotypes.vcf.gz.tbi
+        touch ${prefix}.haplotypes.vcf
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-            bgzip: \$(bgzip --v | grep 'bgzip' | sed 's/.* //g')
-            tabix: \$(echo \$(tabix -h 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
         END_VERSIONS
         """
 }
