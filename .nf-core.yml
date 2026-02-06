@@ -1,0 +1,135 @@
+repository_type: pipeline
+
+nf_core_version: 3.5.2
+
+lint:
+  files_unchanged:
+    - .prettierignore
+    - LICENSE
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-precisionpgx_logo_light.png
+    - docs/images/nf-core-precisionpgx_logo_light.png
+    - docs/images/nf-core-precisionpgx_logo_dark.png
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/CONTRIBUTING.md
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - assets/email_template.txt
+    - docs/README.md
+    - .prettierignore
+    - .prettierignore
+    - .github/CONTRIBUTING.md
+    - .github/CONTRIBUTING.md
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/ISSUE_TEMPLATE/feature_request.yml
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - .github/workflows/branch.yml
+    - .github/workflows/linting_comment.yml
+    - .github/workflows/linting.yml
+    - .github/CONTRIBUTING.md
+    - .github/.dockstore.yml
+    - .github/CONTRIBUTING.md
+    - assets/sendmail_template.txt
+    - .prettierignore
+  modules_config: false
+  nextflow_config: false
+  nf_test_content: false
+  multiqc_config: false
+  files_exist:
+    - CHANGELOG.md
+    - LICENSE
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-precisionpgx_logo_light.png
+    - docs/images/nf-core-precisionpgx_logo_light.png
+    - docs/images/nf-core-precisionpgx_logo_dark.png
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/workflows/awstest.yml
+    - .github/workflows/awsfulltest.yml
+    - .prettierignore
+    - .prettierrc.yml
+    - conf/igenomes.config
+    - conf/base.config
+    - conf/modules.config
+    - modules.json
+    - CITATIONS.md
+    - nextflow_schema.json
+    - conf/test.config
+    - conf/test_full.config
+    - .github/workflows/nf-test.yml
+    - .github/actions/get-shards/action.yml
+    - .github/actions/nf-test/action.yml
+    - conf/igenomes.config
+    - conf/igenomes_ignored.config
+    - .github/workflows/nf-test.yml
+    - .github/actions/get-shards/action.yml
+    - .github/actions/nf-test/action.yml
+    - nf-test.config
+    - tests/default.nf.test
+    - .github/workflows/branch.yml
+    - .github/workflows/nf-test.yml
+    - .github/actions/get-shards/action.yml
+    - .github/actions/nf-test/action.yml
+    - .github/workflows/linting_comment.yml
+    - .github/workflows/linting.yml
+    - docs/output.md
+    - docs/README.md
+    - docs/usage.md
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/ISSUE_TEMPLATE/feature_request.yml
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - .github/CONTRIBUTING.md
+    - .github/.dockstore.yml
+    - assets/multiqc_config.yml
+    - assets/email_template.html
+    - assets/sendmail_template.txt
+    - assets/email_template.txt
+  readme:
+    - nextflow_badge
+    - nfcore_template_badge
+    - nextflow_badge
+  nfcore_components: false
+  schema_lint: false
+  schema_params: false
+  schema_description: false
+  modules_json: false
+  base_config: false
+  included_configs: false
+
+template:
+  org: SMD-Bioinformatics-Lund
+  name: precisionpgx
+  description: SMD-Bioinformatics-Lund/precisionpgx is a reproducible, scalable pharmacogenomics
+    (PGx) analysis pipeline built on the nf-core framework. It performs high-accuracy
+    read alignment and variant calling using Sentieon, followed by standardized PGx
+    interpretation and reporting with PharmCAT. The pipeline supports single-sample
+    clinical PGx workflows, produces VCFs and clinically interpretable PGx reports
+    (HTML/JSON), and is designed for use in regulated and high-performance computing
+    environments using nf-core best practices.
+  author: Ram Nanduri, Sailendra Pradhananga, Johan Fredriksson
+  version: 1.0.0dev
+  force: true
+  outdir: .
+  skip_features:
+    - github
+    - github_badges
+    - changelog
+    - license
+    - ci
+    - test_config
+    - nf-test
+    - igenomes
+    - modules
+    - multiqc
+    - fastqc
+    - nf_schema
+    - nf_core_configs
+    - codespaces
+    - vscode
+    - code_linters
+    - citations
+    - documentation
+    - rocrate
+    - email
+    - slackreport
+  is_nfcore: false
