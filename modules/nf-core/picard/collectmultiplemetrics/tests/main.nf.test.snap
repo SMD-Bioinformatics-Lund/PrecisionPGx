@@ -1,0 +1,98 @@
+{
+    "test-picard-collectmultiplemetrics": {
+        "content": [
+            [
+                "test.CollectMultipleMetrics.alignment_summary_metrics",
+                "test.CollectMultipleMetrics.base_distribution_by_cycle_metrics",
+                "test.CollectMultipleMetrics.insert_size_metrics",
+                "test.CollectMultipleMetrics.quality_by_cycle_metrics",
+                "test.CollectMultipleMetrics.quality_distribution_metrics"
+            ],
+            [
+                "test.CollectMultipleMetrics.base_distribution_by_cycle.pdf",
+                "test.CollectMultipleMetrics.insert_size_histogram.pdf",
+                "test.CollectMultipleMetrics.quality_by_cycle.pdf",
+                "test.CollectMultipleMetrics.quality_distribution.pdf",
+                "test.CollectMultipleMetrics.read_length_histogram.pdf"
+            ],
+            {
+                "versions_picard": [
+                    [
+                        "PICARD_COLLECTMULTIPLEMETRICS",
+                        "picard",
+                        "3.4.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.2"
+        },
+        "timestamp": "2026-02-02T10:22:21.230301646"
+    },
+    "test-picard-collectmultiplemetrics-cram": {
+        "content": [
+            [
+                "test.CollectMultipleMetrics.alignment_summary_metrics",
+                "test.CollectMultipleMetrics.base_distribution_by_cycle_metrics",
+                "test.CollectMultipleMetrics.insert_size_metrics",
+                "test.CollectMultipleMetrics.quality_by_cycle_metrics",
+                "test.CollectMultipleMetrics.quality_distribution_metrics"
+            ],
+            [
+                "test.CollectMultipleMetrics.base_distribution_by_cycle.pdf",
+                "test.CollectMultipleMetrics.insert_size_histogram.pdf",
+                "test.CollectMultipleMetrics.quality_by_cycle.pdf",
+                "test.CollectMultipleMetrics.quality_distribution.pdf",
+                "test.CollectMultipleMetrics.read_length_histogram.pdf"
+            ],
+            {
+                "versions_picard": [
+                    [
+                        "PICARD_COLLECTMULTIPLEMETRICS",
+                        "picard",
+                        "3.4.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.2"
+        },
+        "timestamp": "2026-02-02T10:23:52.23446844"
+    },
+    "test-picard-collectmultiplemetrics-nofasta": {
+        "content": [
+            [
+                "test.CollectMultipleMetrics.alignment_summary_metrics",
+                "test.CollectMultipleMetrics.base_distribution_by_cycle_metrics",
+                "test.CollectMultipleMetrics.insert_size_metrics",
+                "test.CollectMultipleMetrics.quality_by_cycle_metrics",
+                "test.CollectMultipleMetrics.quality_distribution_metrics"
+            ],
+            [
+                "test.CollectMultipleMetrics.base_distribution_by_cycle.pdf",
+                "test.CollectMultipleMetrics.insert_size_histogram.pdf",
+                "test.CollectMultipleMetrics.quality_by_cycle.pdf",
+                "test.CollectMultipleMetrics.quality_distribution.pdf",
+                "test.CollectMultipleMetrics.read_length_histogram.pdf"
+            ],
+            {
+                "versions_picard": [
+                    [
+                        "PICARD_COLLECTMULTIPLEMETRICS",
+                        "picard",
+                        "3.4.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.2"
+        },
+        "timestamp": "2026-02-02T10:23:27.387621193"
+    }
+}

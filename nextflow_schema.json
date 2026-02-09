@@ -1,0 +1,580 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/SMD-Bioinformatics-Lund/PrecisionPGx/master/nextflow_schema.json",
+    "title": "SMD-Bioinformatics-Lund/PrecisionPGx pipeline parameters",
+    "description": "call and score variants from WGS/WES of rare disease patients",
+    "type": "object",
+    "$defs": {
+      "input_output_options": {
+        "title": "Input/output options",
+        "type": "object",
+        "fa_icon": "fas fa-terminal",
+        "description": "Define where the pipeline should find input data and save output data.",
+        "required": ["outdir"],
+        "properties": {
+          "input": {
+            "type": "string",
+            "format": "file-path",
+            "exists": true,
+            "schema": "assets/schema_input.json",
+            "pattern": "^\\S+\\.(csv|tsv|json|yaml|yml)$",
+            "description": "Path to the samplesheet file containing information about the samples in the experiment.",
+            "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/raredisease/usage#samplesheet-input).",
+            "fa_icon": "fas fa-file-csv"
+          },
+          "outdir": {
+            "type": "string",
+            "format": "directory-path",
+            "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+            "fa_icon": "fas fa-folder-open"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address for completion summary.",
+            "fa_icon": "fas fa-envelope",
+            "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
+            "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$",
+            "hidden": true
+          },
+          "multiqc_title": {
+            "type": "string",
+            "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
+            "fa_icon": "fas fa-file-signature",
+            "hidden": true
+          }
+        }
+      },
+      "reference_file_options": {
+        "title": "Reference file options",
+        "type": "object",
+        "fa_icon": "fas fa-dna",
+        "description": "Reference genome related files and options required for the workflow.",
+        "properties": {
+          "bait_padding": {
+            "type": "integer",
+            "default": 100,
+            "fa_icon": "fas fa-align-center",
+            "pattern": "^\\S+\\.bed(\\.gz)?$",
+            "description": "The amount to pad each end of the target intervals to create bait intervals."
+          },
+          "bwa": {
+            "type": "string",
+            "exists": true,
+            "format": "directory-path",
+            "description": "Directory for pre-built bwa index.",
+            "help_text": "If none provided, will be generated automatically from the FASTA reference.",
+            "fa_icon": "fas fa-folder-open"
+          },
+          "bwamem2": {
+            "type": "string",
+            "exists": true,
+            "format": "directory-path",
+            "description": "Directory for pre-built bwamem2 index.",
+            "help_text": "If none provided, will be generated automatically from the FASTA reference.",
+            "fa_icon": "fas fa-folder-open"
+          },
+          "bwameme": {
+            "type": "string",
+            "exists": true,
+            "format": "directory-path",
+            "description": "Directory for pre-built bwameme's learned index.",
+            "help_text": "If none provided, will be generated automatically from the FASTA reference.",
+            "fa_icon": "fas fa-folder-open"
+          },
+          "fai": {
+            "type": "string",
+            "exists": true,
+            "format": "file-path",
+            "help_text": "If none provided, will be generated automatically from the FASTA reference",
+            "description": "Path to FASTA genome index file.",
+            "pattern": "^\\S+\\.fn?a(sta)?\\.fai$",
+            "fa_icon": "fas fa-file"
+          },
+          "fasta": {
+            "type": "string",
+            "format": "file-path",
+            "exists": true,
+            "mimetype": "text/plain",
+            "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
+            "description": "Path to FASTA genome file.",
+            "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
+            "fa_icon": "fas fa-file"
+          },
+          "genome": {
+            "type": "string",
+            "description": "Name of iGenomes reference.",
+            "fa_icon": "fas fa-align-center",
+            "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details.",
+            "default": "GRCh38",
+            "enum": ["GRCh37", "GRCh38"]
+          },
+          "igenomes_base": {
+            "type": "string",
+            "exists": true,
+            "format": "directory-path",
+            "description": "The base path to the igenomes reference files",
+            "fa_icon": "fas fa-ban",
+            "hidden": true,
+            "default": "s3://ngi-igenomes/igenomes/"
+          },
+          "igenomes_ignore": {
+            "type": "boolean",
+            "description": "Do not load the iGenomes reference config.",
+            "fa_icon": "fas fa-ban",
+            "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
+          },
+          "intervals_wgs": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.intervals?(_list)?$",
+            "description": "Path to the interval list of the genome (autosomes, sex chromosomes, and mitochondria).",
+            "help_text": "Path to the interval list of the genome. This is used to calculate genome-wide coverage statistics."
+          },
+          "local_genomes": {
+            "type": "string",
+            "exists": true,
+            "format": "directory-path",
+            "fa_icon": "fas fa-map-marker-alt",
+            "description": "Local directory base for genome references that map to the config.",
+            "help_text": "This folder is a flat structure with file names that map to the config."
+          },
+          "modules_testdata_base_path": {
+            "type": "string",
+            "description": "Base path / URL for data used in the modules",
+            "hidden": true
+          },
+          "ml_model": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "description": "Path to sentieon machine learning model file."
+          },
+          "save_reference": {
+            "type": "boolean",
+            "description": "If generated by the pipeline save the required indices/references in the results directory.",
+            "help_text": "The saved references can be used for future pipeline runs, reducing processing times.",
+            "fa_icon": "fas fa-save"
+          },
+          "sequence_dictionary": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.dict$",
+            "description": "Path to the genome dictionary file"
+          },
+          "target_bed": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.bed(\\.gz)?$",
+            "description": "Path to directory for target bed file.",
+            "help_text": "If you would like to limit your analysis to specific regions of the genome, you can pass those regions in a bed file using this option"
+          },
+          "verifybamid_svd_bed": {
+            "type": "string",
+            "exists": true,
+            "format": "file-path",
+            "description": "Path to a BED file containing markers used by verifybamid2.",
+            "fa_icon": "fas fa-file-csv"
+          },
+          "verifybamid_svd_mu": {
+            "type": "string",
+            "exists": true,
+            "format": "file-path",
+            "description": "Path to mean matrix file of genotype matrix. Used by verifybamid2.",
+            "fa_icon": "fas fa-file-csv"
+          },
+          "verifybamid_svd_ud": {
+            "type": "string",
+            "exists": true,
+            "format": "file-path",
+            "description": "Path to UD matrix file from SVD result of genotype matrix. Used by verifybamid2.",
+            "fa_icon": "fas fa-file-csv"
+          }
+        },
+        "required": ["fasta", "genome"]
+      },
+      "analysis_options": {
+        "title": "Analysis options",
+        "type": "object",
+        "fa_icon": "fas fa-user-cog",
+        "description": "Options used to steer the direction of the pipeline.",
+        "properties": {
+          "analysis_type": {
+            "type": "string",
+            "description": "Specifies which analysis type for the pipeline- either 'panel' or 'wgs'. This changes resources consumed and tools used.",
+            "fa_icon": "fas fa-align-center",
+            "enum": ["wgs", "panel"]
+          },
+          "bwa_as_fallback": {
+            "type": "boolean",
+            "description": "Specifies whether or not to use bwa as a fallback aligner in case bwamem2 throws an error.",
+            "help_text": "errorStrategy needs to be set to ignore for the bwamem2 process for the fallback to work. Turned off by default.",
+            "fa_icon": "fas fa-toggle-on"
+          },
+          "extract_alignments": {
+            "type": "boolean",
+            "default": false,
+            "description": "After aligning the reads to a reference, extract alignments from specific regions/contigs and restrict the analysis to those regions/contigs.",
+            "help_text": "Set this to true, and specify the contig(s) using `restrict_to_contigs` parameter",
+            "fa_icon": "fas fa-toggle-on"
+          },
+          "platform": {
+            "type": "string",
+            "default": "illumina",
+            "description": "Specifies the platform on which the reads were sequenced.",
+            "fa_icon": "fas fa-align-center"
+          },
+          "restrict_to_contigs": {
+            "type": "string",
+            "description": "Can be specified as RNAME[:STARTPOS[-ENDPOS]]. Multiple regions should be seperated by space",
+            "fa_icon": "fas fa-align-center"
+          },
+          "save_mapped_as_cram": {
+            "type": "boolean",
+            "description": "Specifies whether to generate and publish alignment files as cram instead of bam",
+            "fa_icon": "fas fa-toggle-on"
+          },
+          "skip_subworkflows": {
+            "type": "string",
+            "fa_icon": "fas fa-forward",
+            "description": "Disable specified subworkflows.",
+            "help_text": "Multiple subworkflows can be specified, separated by commas.",
+            "pattern": "^((me_calling|me_annotation|mt_annotation|mt_subsample|repeat_annotation|repeat_calling|snv_annotation|snv_calling|sv_annotation|sv_calling|generate_clinical_set)?,?)*(?<!,)$"
+          },
+          "skip_tools": {
+            "type": "string",
+            "fa_icon": "fas fa-forward",
+            "description": "Disable specified tools.",
+            "help_text": "Multiple tools can be specified, separated by commas.",
+            "pattern": "^((fastp|gens|germlinecnvcaller|haplogrep3|peddy|smncopynumbercaller|vcf2cytosure|fastqc|qualimap|ngsbits|eklipse)?,?)*(?<!,)$"
+          }
+        }
+      },
+      "alignment_options": {
+        "title": "Alignment options",
+        "type": "object",
+        "fa_icon": "fas fa-map-signs",
+        "description": "Options to adjust parameters and filtering criteria for read alignments.",
+        "properties": {
+          "aligner": {
+            "type": "string",
+            "default": "bwamem2",
+            "description": "Specifies the alignment algorithm to use - available options are 'bwamem2', 'bwa', 'bwameme' and 'sentieon'.",
+            "fa_icon": "fas fa-align-center",
+            "enum": ["bwa", "bwamem2", "bwameme", "sentieon", "bcbio"]
+          },
+          "samtools_sort_threads": {
+            "type": "integer",
+            "default": 4,
+            "description": "Number of threads allocated for sorting alignment files (used only by bwameme)",
+            "help_text": "To know more about this parameter check [bwameme](https://github.com/kaist-ina/BWA-MEME?tab=readme-ov-file#building-pipeline-with-samtools) documentation.",
+            "fa_icon": "fas fa-less-than"
+          },
+          "mbuffer_mem": {
+            "type": "integer",
+            "default": 3072,
+            "description": "Memory allocated for mbuffer in megabytes (used only by bwameme)",
+            "help_text": "To know more about this parameter check [bwameme](https://github.com/kaist-ina/BWA-MEME?tab=readme-ov-file#building-pipeline-with-samtools) documentation.",
+            "fa_icon": "fas fa-less-than"
+          },
+          "min_trimmed_length": {
+            "type": "integer",
+            "default": 40,
+            "description": "Discard trimmed reads shorter than the given value",
+            "help_text": "Minimum length of reads after adapter trimming. Shorter reads are discarded.",
+            "fa_icon": "fas fa-less-than"
+          },
+          "rmdup": {
+            "type": "boolean",
+            "description": "Specifies whether duplicates reads should be removed prior to variant calling.",
+            "fa_icon": "fas fa-toggle-on"
+          }
+        }
+      },
+      "variant_calling_options": {
+        "title": "Variant calling options",
+        "type": "object",
+        "fa_icon": "fas fa-map-signs",
+        "description": "Options to adjust parameters and filtering criteria for variant calling.",
+        "properties": {
+          "call_interval": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-align-center",
+            "description": "Interval in the reference that will be used in the software. Used only by sentieon."
+          },
+          "gatk4": {
+            "type": "boolean",
+            "fa_icon": "fas fa-bacon",
+            "description": "Use GATK4 for haplotype calling. This is a GATK4 only option and will be ignored if not specified.",
+            "help_text": "Use GATK4 for haplotype calling. This is a GATK4 only option and will be ignored if not specified."
+          },
+          "sentieon": {
+            "type": "boolean",
+            "fa_icon": "fas fa-bacon",
+            "description": "Use Sentieon for haplotype calling. This is a Sentieon only option and will be ignored if not specified.",
+            "help_text": "Use Sentieon for haplotype calling. This is a Sentieon only option and will be ignored if not specified."
+          },
+          "samtools": {
+            "type": "boolean",
+            "fa_icon": "fas fa-bacon",
+            "description": "Use samtools for variant calling. This is a samtools mpileup only option and will be ignored if not specified.",
+            "help_text": "Use samtools for variant calling. This is a samtools mpileup only option and will be ignored if not specified."
+          },
+          "bcbio": {
+            "type": "boolean",
+            "fa_icon": "fas fa-bacon",
+            "description": "Use bcbio for variant calling. This is a bcbio only option and will be ignored if not specified.",
+            "help_text": "Use bcbio for variant calling. This is a bcbio only option and will be ignored if not specified."
+          },
+          "merge_variants": {
+            "type": "boolean",
+            "fa_icon": "fas fa-bacon",
+            "description": "Use merge variants for variant calling. This is when there are more than one variant callers are selected and will be ignored if not more than one variant caller is selected.",
+            "help_text": "Use merge variants for variant calling. This is when there are more than one variant callers are selected and will be ignored if not more than one variant caller is selected."
+          },
+          "min_variant_callers_required": {
+            "type": "integer",
+            "fa_icon": "fas fa-bacon",
+            "description": "Minimum number of variant callers required to be used for retaining the variant. This is only used when merge_variants is set.",
+            "help_text": "Minimum number of variant callers required to be used for retaining the variant. This is only used when merge_variants is set."
+          },
+          "min_dp": {
+            "type": "integer",
+            "fa_icon": "fas fa-bacon",
+            "description": "Minimum depth required for a variant call to be retained.",
+            "help_text": "Minimum depth required for a variant call to be retained."
+          }
+        }
+      },
+      "cnv_calling": {
+        "title": "CNV Calling options",
+        "type": "object",
+        "fa_icon": "fas fa-user-cog",
+        "description": "Options used to call CNVs.",
+        "properties": {}
+      },
+      "pharmcat_annotation": {
+        "title": "Pharmcat annotation options",
+        "type": "object",
+        "fa_icon": "fas fa-user-cog",
+        "description": "Options for running pharmcat annotation and reporting",
+        "properties": {
+          "pharmcat": {
+            "type": "boolean",
+            "fa_icon": "fas fa-user-cog",
+            "description": "Run pharmcat annotation and reporting?",
+            "help_text": "Run pharmcat annotation and reporting?"
+          },
+          "pharmcat_resource_dir": {
+            "type": "string",
+            "exists": true,
+            "format": "directory-path",
+            "description": "Directory for phamrcat resouces.",
+            "help_text": "Directory for phamrcat resouces.",
+            "fa_icon": "fas fa-folder-open"
+          },
+          "pharmcat_bed": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.bed(\\.gz)?$",
+            "description": "Path to directory for phamrcat positions bed file.",
+            "help_text": "If you would like to limit your coverage analysis or to check if all the phamrcat positions are covered, you can pass those regions in a bed file using this option"
+          }
+        },
+        "dependentRequired": {
+          "pharmcat": ["pharmcat_resource_dir"]
+        }
+      },
+      "institutional_config_options": {
+        "title": "Institutional config options",
+        "type": "object",
+        "fa_icon": "fas fa-university",
+        "description": "Parameters used to describe centralised config profiles. These should not be edited.",
+        "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+        "properties": {
+          "custom_config_version": {
+            "type": "string",
+            "description": "Git commit id for Institutional configs.",
+            "default": "master",
+            "hidden": true,
+            "fa_icon": "fas fa-users-cog"
+          },
+          "custom_config_base": {
+            "type": "string",
+            "description": "Base directory for Institutional configs.",
+            "default": "https://raw.githubusercontent.com/nf-core/configs/master",
+            "hidden": true,
+            "help_text": "If you're running offline, Nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell Nextflow where to find them with this parameter.",
+            "fa_icon": "fas fa-users-cog"
+          },
+          "config_profile_name": {
+            "type": "string",
+            "description": "Institutional config name.",
+            "hidden": true,
+            "fa_icon": "fas fa-users-cog"
+          },
+          "config_profile_description": {
+            "type": "string",
+            "description": "Institutional config description.",
+            "hidden": true,
+            "fa_icon": "fas fa-users-cog"
+          },
+          "config_profile_contact": {
+            "type": "string",
+            "description": "Institutional config contact information.",
+            "hidden": true,
+            "fa_icon": "fas fa-users-cog"
+          },
+          "config_profile_url": {
+            "type": "string",
+            "description": "Institutional config URL link.",
+            "hidden": true,
+            "fa_icon": "fas fa-users-cog"
+          }
+        }
+      },
+      "generic_options": {
+        "title": "Generic options",
+        "type": "object",
+        "fa_icon": "fas fa-file-import",
+        "description": "Less common options for the pipeline, typically set in a config file.",
+        "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+        "properties": {
+          "version": {
+            "type": "boolean",
+            "description": "Display version and exit.",
+            "fa_icon": "fas fa-question-circle",
+            "hidden": true
+          },
+          "publish_dir_mode": {
+            "type": "string",
+            "default": "copy",
+            "description": "Method used to save pipeline results to output directory.",
+            "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
+            "fa_icon": "fas fa-copy",
+            "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
+            "hidden": true
+          },
+          "email_on_fail": {
+            "type": "string",
+            "description": "Email address for completion summary, only when pipeline fails.",
+            "fa_icon": "fas fa-exclamation-triangle",
+            "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$",
+            "help_text": "An email address to send a summary email to when the pipeline is completed - ONLY sent if the pipeline does not exit successfully.",
+            "hidden": true
+          },
+          "plaintext_email": {
+            "type": "boolean",
+            "description": "Send plain-text email instead of HTML.",
+            "fa_icon": "fas fa-remove-format",
+            "hidden": true
+          },
+          "max_multiqc_email_size": {
+            "type": "string",
+            "description": "File size limit when attaching MultiQC reports to summary emails.",
+            "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
+            "default": "25.MB",
+            "fa_icon": "fas fa-file-upload",
+            "hidden": true
+          },
+          "monochrome_logs": {
+            "type": "boolean",
+            "description": "Do not use coloured log outputs.",
+            "fa_icon": "fas fa-palette",
+            "hidden": true
+          },
+          "hook_url": {
+            "type": "string",
+            "description": "Incoming hook URL for messaging service",
+            "fa_icon": "fas fa-people-group",
+            "help_text": "Incoming hook URL for messaging service. Currently, MS Teams and Slack are supported.",
+            "hidden": true
+          },
+          "multiqc_config": {
+            "type": "string",
+            "format": "file-path",
+            "exists": true,
+            "description": "Custom config file to supply to MultiQC.",
+            "fa_icon": "fas fa-cog",
+            "hidden": true
+          },
+          "multiqc_logo": {
+            "type": "string",
+            "format": "file-path",
+            "exists": true,
+            "description": "Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file",
+            "fa_icon": "fas fa-image",
+            "hidden": true
+          },
+          "multiqc_methods_description": {
+            "type": "string",
+            "format": "file-path",
+            "exists": true,
+            "description": "Custom MultiQC yaml file containing HTML including a methods description.",
+            "fa_icon": "fas fa-cog",
+            "hidden": true
+          },
+          "validate_params": {
+            "type": "boolean",
+            "description": "Boolean whether to validate parameters against the schema at runtime",
+            "default": true,
+            "fa_icon": "fas fa-check-square",
+            "hidden": true
+          },
+          "pipelines_testdata_base_path": {
+            "type": "string",
+            "fa_icon": "far fa-check-circle",
+            "description": "Base URL or local path to location of pipeline test dataset files",
+            "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
+            "hidden": true
+          },
+          "trace_report_suffix": {
+            "type": "string",
+            "fa_icon": "far calendar",
+            "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+            "hidden": true
+          }
+        }
+      }
+    },
+    "allOf": [
+      {
+        "$ref": "#/$defs/input_output_options"
+      },
+      {
+        "$ref": "#/$defs/reference_file_options"
+      },
+      {
+        "$ref": "#/$defs/analysis_options"
+      },
+      {
+        "$ref": "#/$defs/alignment_options"
+      },
+      {
+        "$ref": "#/$defs/variant_calling_options"
+      },
+      {
+        "$ref": "#/$defs/cnv_calling"
+      },
+      {
+        "$ref": "#/$defs/pharmcat_annotation"
+      },
+      {
+        "$ref": "#/$defs/institutional_config_options"
+      },
+      {
+        "$ref": "#/$defs/generic_options"
+      }
+    ]
+  }
+  

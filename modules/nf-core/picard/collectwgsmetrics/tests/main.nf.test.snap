@@ -1,0 +1,40 @@
+{
+    "test-picard-collectwgsmetrics-with-interval": {
+        "content": [
+            true,
+            {
+                "versions_picard": [
+                    [
+                        "PICARD_COLLECTWGSMETRICS",
+                        "picard",
+                        "3.4.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.2"
+        },
+        "timestamp": "2026-02-02T14:52:55.091876466"
+    },
+    "test-picard-collectwgsmetrics": {
+        "content": [
+            true,
+            {
+                "versions_picard": [
+                    [
+                        "PICARD_COLLECTWGSMETRICS",
+                        "picard",
+                        "3.4.0"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.10.2"
+        },
+        "timestamp": "2026-02-02T14:52:11.334274481"
+    }
+}

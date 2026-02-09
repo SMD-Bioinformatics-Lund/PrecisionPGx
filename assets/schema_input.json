@@ -1,0 +1,117 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/SMD-Bioinformatics-Lund/PrecisionPGx/master/assets/schema_input.json",
+    "title": "SMD-Bioinformatics-Lund/PrecisionPGx pipeline - params.input schema",
+    "description": "Schema for the file provided with params.input",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample": {
+                "type": "string",
+                "meta": ["id", "sample"],
+                "pattern": "^\\S+$",
+                "errorMessage": "Sample name must be provided and must be a string that cannot contain spaces"
+            },
+            "case_id": {
+                "type": "string",
+                "meta": ["case_id"],
+                "pattern": "^\\S+$",
+                "errorMessage": "Case name must be provided and cannot contain spaces"
+            },
+            "type": {
+                "type": "string",
+                "enum": ["T", "N"],
+                "meta": ["type"],
+                "errorMessage": "Sample Type must be provided and cannot contain spaces. It has to be one of this values: 'T, N'"
+            },
+            "ffpe": {
+                "type": "boolean",
+                "enum": [true, false],
+                "meta": ["ffpe"],
+                "errorMessage": "FFPE status must be provided and can only be one of this values : 'true, false'"
+            },
+            "purity": {
+                "type": "number",
+                "meta": ["purity"],
+                "minimum": 0,
+                "maximum": 1,
+                "errorMessage": "Purity must be a number, between 0 and 1"
+            },
+            "lane": {
+                "oneOf": [
+                    {
+                        "type": "integer"
+                    },
+                    {
+                        "type": "string",
+                        "pattern": "^\\S+$"
+                    }
+                ],
+                "meta": ["lane"],
+                "errorMessage": "Lane must be an interger or a string that cannot contain spaces"
+            },
+            "fastq_1": {
+                "errorMessage": "Gzipped FastQ file for reads 1 must be provided, has to exist, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'",
+                "type": "string",
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "format": "file-path",
+                "exists": true
+            },
+            "fastq_2": {
+                "errorMessage": "Gzipped FastQ file for reads 2, has to exist, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'",
+                "type": "string",
+                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+                "format": "file-path",
+                "exists": true
+            },
+            "spring_1": {
+                "errorMessage": "Gzipped and spring-compressed FastQ file for reads 1 cannot contain spaces, has to exist and must have extension '.spring'",
+                "type": "string",
+                "pattern": "^\\S+.spring$",
+                "format": "file-path",
+                "exists": true
+            },
+            "spring_2": {
+                "errorMessage": "Gzipped and spring-compressed FastQ file for reads 2 has to exist, cannot contain spaces and must have extension '.spring'",
+                "type": "string",
+                "pattern": "^\\S+.spring$",
+                "format": "file-path",
+                "exists": true
+            },
+            "bam": {
+                "errorMessage": "BAM file cannot contain spaces and must have extension '.bam'",
+                "type": "string",
+                "pattern": "^\\S+\\.bam$",
+                "format": "file-path",
+                "exists": true
+            },
+            "bai": {
+                "errorMessage": "BAM index file cannot contain spaces and must have extension '.bai'",
+                "type": "string",
+                "pattern": "^\\S+\\.bai$",
+                "format": "file-path",
+                "exists": true
+            }
+        },
+        "uniqueEntries": ["case_id", "sample"],
+        "anyOf": [
+            {
+                "dependentRequired": {
+                    "lane": ["fastq_1"]
+                }
+            },
+            {
+                "dependentRequired": {
+                    "lane": ["spring_1"]
+                }
+            }
+        ],
+        "dependentRequired": {
+            "fastq_2": ["fastq_1"],
+            "spring_2": ["spring_1"],
+            "bam": ["bai"]
+        },
+        "required": ["sample", "type", "case_id"]
+    }
+}
