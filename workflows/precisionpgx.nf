@@ -38,6 +38,7 @@ include { RENAME_ALIGN_FILES as RENAME_BAI } from '../modules/local/rename_align
 include { ALIGN                                              } from '../subworkflows/local/align'
 include { PREPARE_REFERENCES                                 } from '../subworkflows/local/prepare_references'
 include { QC_BAM                                             } from '../subworkflows/local/qc_bam'
+include { VARIANT_CALLING                                    } from '../subworkflows/local/variant_calling'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -95,7 +96,7 @@ workflow PRECISIONPGX {
     ch_genome_chrsizes          = ch_references.genome_chrom_sizes
     ch_genome_fai               = ch_references.genome_fai
     ch_genome_dictionary        = ch_references.genome_dict
-    ch_ml_model                 = params.sentieon                           ? Channel.fromPath(params.ml_model).map {it -> [[id:it.simpleName], it]}.collect()
+    ch_ml_model                 = params.variant_caller.equals('sentieon')  ? Channel.fromPath(params.ml_model).map {it -> [[id:it.simpleName], it]}.collect()
                                                                             : Channel.value([[:],[]])
 
     ch_intervals_wgs            = params.intervals_wgs                      ? Channel.fromPath(params.intervals_wgs).collect()
@@ -106,6 +107,10 @@ workflow PRECISIONPGX {
                                                                             : Channel.empty()
     ch_svd_ud                   = params.verifybamid_svd_ud                 ? Channel.fromPath(params.verifybamid_svd_ud)
                                                                             : Channel.empty()
+
+    ch_sentieon_emit_vcf        = params.emit_mode.equals('gvcf')           ? Channel.value(false) : Channel.value(params.emit_mode)
+    ch_sentieon_emit_gvcf       = params.emit_mode.equals('gvcf')           ? Channel.value(params.emit_mode) : Channel.value(false)
+
     ch_versions                 = ch_versions.mix(ch_references.versions)
 
 
@@ -172,6 +177,21 @@ workflow PRECISIONPGX {
         ch_svd_ud,
     )
     ch_versions = ch_versions.mix(QC_BAM.out.versions)
+
+    //
+    // VARIANT CALLING
+    //
+
+    VARIANT_CALLING (
+        ch_mapped.genome_bam_bai,
+        ch_genome_fasta,
+        ch_genome_fai,
+        ch_genome_dictionary,
+        ch_target_intervals,
+        ch_sentieon_emit_vcf,
+        ch_sentieon_emit_gvcf
+    )
+    .set { ch_haplotypes }
 
 
 /*

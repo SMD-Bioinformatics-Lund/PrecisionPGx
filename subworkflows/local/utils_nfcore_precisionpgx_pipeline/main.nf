@@ -173,7 +173,7 @@ workflow PIPELINE_COMPLETION {
                 plaintext_email,
                 outdir,
                 monochrome_logs,
-                multiqc_reports.getVal(),
+                multiqc_reports.value,
             )
         }
 
@@ -216,10 +216,6 @@ def checkRequiredParameters(params) {
         "analysis_type",
         "fasta",
         "input",
-        "gatk4",
-        "sentieon",
-        "samtools",
-        "bcbio",
         "outdir",
     ]
 
@@ -231,15 +227,15 @@ def checkRequiredParameters(params) {
 
     // Requirements that can be modified by the user using either skip_tools or skip_subworkflows here
     def dynamicRequirements = [
-        haplotype_calling              : ["genome"],
-        haplotype_annotation           : ["genome", "pharmcat"],
+        variant_calling              : ["genome"],
+        variant_annotation           : ["genome", "pharmcat"],
     ]
 
     def missingParamsCount = 0
 
     staticRequirements.each { condition, paramsList ->
         if ((condition == "analysis_type_panel" && params.analysis_type == "panel") ||
-            (condition == "variant_caller_sentieon" && params.sentieon)) {
+            (condition == "variant_caller_sentieon" && params.variant_caller.equals('sentieon'))) {
                 mandatoryParams += paramsList
         }
     }
@@ -272,9 +268,9 @@ def validatePharmcatParams() {
     }
 
     // pharmcat bed/intervals for calling (panel PGx)
-    if (params.pharmcat_bed) {
-        def b = file(params.pharmcat_bed)
-        if (!b.exists()) error "BED file does not exist: ${params.pharmcat_bed}"
+    if (params.pharmcat_positions_vcf) {
+        def v = file(params.pharmcat_positions_vcf)
+        if (!v.exists()) error "Pharmcat positions vcf file does not exist: ${params.pharmcat_positions_vcf}"
     }
 }
 
@@ -324,7 +320,7 @@ def genomeExistsError() {
 def toolCitationText() {
 
     def align_text                  = []
-    def haplotype_annotation_text   = []
+    def variant_annotation_text   = []
     def haplotype_calls_text        = []
     def qc_bam_text                 = []
     def preprocessing_text          = []
@@ -339,8 +335,8 @@ def toolCitationText() {
     ]
 
     // TODO:
-    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('haplotype_annotation'))) {
-        haplotype_annotation_text = [
+    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('variant_annotation'))) {
+        variant_annotation_text = [
             "CADD (Rentzsch et al., 2019, 2021),",
             "Vcfanno (Pedersen et al., 2016),",
             "VEP (McLaren et al., 2016),",
@@ -349,10 +345,10 @@ def toolCitationText() {
     }
 
     // TODO:
-    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('haplotype_calling'))) {
+    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('variant_calling'))) {
         haplotype_calls_text = [
-            params.gatk4 ? "GATK (McKenna et al., 2010),"      : "",
-            params.sentieon    ? "Sentieon DNAscope (Freed et al., 2022)," : "",
+            params.variant_caller.equals('gatk4') ? "GATK (McKenna et al., 2010),"      : "",
+            params.variant_caller.equals('sentieon')    ? "Sentieon DNAscope (Freed et al., 2022)," : "",
         ]
     }
 
@@ -384,7 +380,7 @@ def toolCitationText() {
     ]
 
     def concat_text = align_text +
-                        haplotype_annotation_text   +
+                        variant_annotation_text   +
                         haplotype_calls_text        +
                         qc_bam_text                 +
                         preprocessing_text          +
@@ -397,7 +393,7 @@ def toolCitationText() {
 def toolBibliographyText() {
 
     def align_text                  = []
-    def haplotype_annotation_text   = []
+    def variant_annotation_text   = []
     def haplotype_calls_text        = []
     def qc_bam_text                 = []
     def preprocessing_text          = []
@@ -412,8 +408,8 @@ def toolBibliographyText() {
     ]
 
     // TODO:
-    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('haplotype_annotation'))) {
-        haplotype_annotation_text = [
+    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('variant_annotation'))) {
+        variant_annotation_text = [
             "<li>Rentzsch, P., Schubach, M., Shendure, J., & Kircher, M. (2021). CADD-Splice—Improving genome-wide variant effect prediction using deep learning-derived splice scores. Genome Medicine, 13(1), 31. https://doi.org/10.1186/s13073-021-00835-9</li>",
             "<li>Rentzsch, P., Witten, D., Cooper, G. M., Shendure, J., & Kircher, M. (2019). CADD: Predicting the deleteriousness of variants throughout the human genome. Nucleic Acids Research, 47(D1), D886–D894. https://doi.org/10.1093/nar/gky1016</li>",
             "<li>Pedersen, B. S., Layer, R. M., & Quinlan, A. R. (2016). Vcfanno: Fast, flexible annotation of genetic variants. Genome Biology, 17(1), 118. https://doi.org/10.1186/s13059-016-0973-5</li>",
@@ -422,10 +418,10 @@ def toolBibliographyText() {
         ]
     }
     // TODO:
-    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('haplotype_calling'))) {
+    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('variant_calling'))) {
         haplotype_calls_text = [
-            params.gatk4 ? "<li>Poplin, R., Chang, P.-C., Alexander, D., Schwartz, S., Colthurst, T., Ku, A., Newburger, D., Dijamco, J., Nguyen, N., Afshar, P. T., Gross, S. S., Dorfman, L., McLean, C. Y., & DePristo, M. A. (2018). A universal SNP and small-indel variant caller using deep neural networks. Nature Biotechnology, 36(10), 983–987. https://doi.org/10.1038/nbt.4235</li>" : "",
-            params.sentieon ? "<li>Freed, D., Pan, R., Chen, H., Li, Z., Hu, J., & Aldana, R. (2022). DNAscope: High accuracy small variant calling using machine learning [Preprint]. Bioinformatics. https://doi.org/10.1101/2022.05.20.492556</li>" : ""
+            params.variant_caller.equals('gatk4') ? "<li>Poplin, R., Chang, P.-C., Alexander, D., Schwartz, S., Colthurst, T., Ku, A., Newburger, D., Dijamco, J., Nguyen, N., Afshar, P. T., Gross, S. S., Dorfman, L., McLean, C. Y., & DePristo, M. A. (2018). A universal SNP and small-indel variant caller using deep neural networks. Nature Biotechnology, 36(10), 983–987. https://doi.org/10.1038/nbt.4235</li>" : "",
+            params.variant_caller.equals('sentieon') ? "<li>Freed, D., Pan, R., Chen, H., Li, Z., Hu, J., & Aldana, R. (2022). DNAscope: High accuracy small variant calling using machine learning [Preprint]. Bioinformatics. https://doi.org/10.1101/2022.05.20.492556</li>" : ""
         ]
     }
 
@@ -453,7 +449,7 @@ def toolBibliographyText() {
     ]
 
     def concat_text = align_text +
-                        haplotype_annotation_text   +
+                        variant_annotation_text   +
                         haplotype_calls_text        +
                         qc_bam_text                 +
                         preprocessing_text          +
