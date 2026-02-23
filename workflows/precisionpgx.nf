@@ -39,6 +39,7 @@ include { ALIGN                                              } from '../subworkf
 include { PREPARE_REFERENCES                                 } from '../subworkflows/local/prepare_references'
 include { QC_BAM                                             } from '../subworkflows/local/qc_bam'
 include { VARIANT_CALLING                                    } from '../subworkflows/local/variant_calling'
+include { VARIANT_FILTRATION                                 } from '../subworkflows/local/variant_filtration'
 include { PHARMCAT_PIPELINE                                  } from '../subworkflows/local/pharmcat_pipeline'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,6 +202,27 @@ workflow PRECISIONPGX {
     .set { ch_haplotypes }
 
 
+    ch_filter_vcf_input = ch_haplotypes.sentieon_vcf.mix(
+        ch_haplotypes.sentieon_vcf,
+        ch_haplotypes.gatk_vcf,
+        ch_haplotypes.deepvariant_vcf
+        )
+    
+    ch_filter_vcf_input_tbi = ch_haplotypes.sentieon_vcf_tbi.mix(
+        ch_haplotypes.sentieon_vcf_tbi,
+        ch_haplotypes.gatk_vcf_tbi,
+        ch_haplotypes.deepvariant_vcf_tbi
+        )
+
+
+    VARIANT_FILTRATION (
+        ch_filter_vcf_input.groupTuple(ch_filter_vcf_input_tbi),
+        ch_genome_fasta,
+        ch_genome_fai,
+        ch_target_bed
+    )
+    .set { ch_filtered_haplotypes }
+
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -229,7 +251,7 @@ workflow PRECISIONPGX {
     // PHAMRCAT
     //
 
-    PHARMCAT_PIPELINE(ch_haplotypes.haplotypes_vcf)
+    PHARMCAT_PIPELINE(ch_filtered_haplotypes.merged_vcf)
     .set { ch_pharmcat }
 
 
