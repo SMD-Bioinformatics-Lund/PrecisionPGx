@@ -1,6 +1,7 @@
 include { SENTIEON_HAPLOTYPER                       } from '../../modules/nf-core/sentieon/haplotyper'
 include { GATK4_HAPLOTYPECALLER                     } from '../../modules/nf-core/gatk4/haplotypecaller'
 include { DEEPVARIANT_RUNDEEPVARIANT                } from '../../modules/nf-core/deepvariant/rundeepvariant'
+
 //include { AGGREGATE_VCFS                            } from '../../modules/local/aggregate_vcfs/main'
 
 
@@ -18,9 +19,6 @@ workflow VARIANT_CALLING {
 
 
     main:
-        ch_versions = Channel.empty()
-
-
         bam_bai_ch.combine(ch_intervals).set {ch_haplotyping_input }
 
         // Sentieon haplotyping
@@ -39,8 +37,8 @@ workflow VARIANT_CALLING {
             val_sentieon_emit_gvcf
         )
 
-        ch_sentieon_vcf        = Channel.empty().mix(SENTIEON_HAPLOTYPER.out.vcf, SENTIEON_HAPLOTYPER.out.gvcf )
-        ch_sentieon_vcf_tbi    = Channel.empty().mix(SENTIEON_HAPLOTYPER.out.vcf_tbi, SENTIEON_HAPLOTYPER.out.gvcf_tbi )
+        ch_sentieon_vcf        = channel.empty().mix(SENTIEON_HAPLOTYPER.out.vcf, SENTIEON_HAPLOTYPER.out.gvcf )
+        ch_sentieon_vcf_tbi    = channel.empty().mix(SENTIEON_HAPLOTYPER.out.vcf_tbi, SENTIEON_HAPLOTYPER.out.gvcf_tbi )
         
         // GATK haplotyping
         ch_gatk_hp_input = ch_haplotyping_input.map { meta, bam, bai, intervals ->
@@ -67,7 +65,6 @@ workflow VARIANT_CALLING {
         )
 
 
-
         // Aggregate all callers to one VCF
         // ch_vcf = Channel.empty().mix(
         //         ch_sentieon_vcf.decomposed_normalized_vcfs, 
@@ -82,8 +79,11 @@ workflow VARIANT_CALLING {
 
 
     emit:
-        sentieon_vcf        = ch_sentieon_vcf
-        sentieon_vcf_tbi    = ch_sentieon_vcf_tbi
-        gatk_vcf            = GATK4_HAPLOTYPECALLER.out.vcf
-        gatk_vcf_tbi        = GATK4_HAPLOTYPECALLER.out.tbi
+        sentieon_vcf                            = ch_sentieon_vcf                           // channel: [ val(meta), path(vcf) ]
+        sentieon_vcf_tbi                        = ch_sentieon_vcf_tbi                       // channel: [ val(meta), path(tbi) ]
+        gatk_vcf                                = GATK4_HAPLOTYPECALLER.out.vcf             // channel: [ val(meta), path(vcf) ]
+        gatk_vcf_tbi                            = GATK4_HAPLOTYPECALLER.out.tbi             // channel: [ val(meta), path(tbi) ]
+        deepvariant_vcf                         = DEEPVARIANT_RUNDEEPVARIANT.out.vcf        // channel: [ val(meta), path(vcf) ]
+        deepvariant_vcf_tbi                     = DEEPVARIANT_RUNDEEPVARIANT.out.tbi        // channel: [ val(meta), path(tbi) ]
+
 }
