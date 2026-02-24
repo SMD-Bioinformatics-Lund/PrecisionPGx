@@ -182,7 +182,7 @@
                     },
                     "pharmcat/vcfpreprocessor": {
                         "branch": "master",
-                        "git_sha": "cdbef32962111df8ea668055bb816b03b066b58b",
+                        "git_sha": "f10c9a56efdabe1736e5ef977b921b05f1b2ac01",
                         "installed_by": [
                             "modules"
                         ]

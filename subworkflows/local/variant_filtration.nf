@@ -2,6 +2,7 @@ include { BCFTOOLS_NORM                 } from '../../modules/nf-core/bcftools/n
 include { BCFTOOLS_MERGE                } from '../../modules/nf-core/bcftools/merge/main'
 include { BCFTOOLS_VIEW                 } from '../../modules/nf-core/bcftools/view/main'
 include { BCFTOOLS_FILTER               } from '../../modules/nf-core/bcftools/filter/main'
+include { FIX_CHROM_NAMES_EXTRACT_PASS  } from '../../modules/local/fix_chrom_names/main'
 
 
 workflow VARIANT_FILTRATION {
@@ -62,10 +63,19 @@ workflow VARIANT_FILTRATION {
             ) 
         ).set { ch_filtered_vcf }
 
+        // Fix Chromosome names in the filtered VCF using BCFTOOLS VIEW
+
+        // FIX_CHROM_NAMES_EXTRACT_PASS(
+        //     ch_filtered_vcf.vcf
+        // ).set { ch_filtered_vcf_fixed }
+
+
     emit:
         merged_vcf          = ch_merged_view.vcf            // channel: [ val(meta), path(merged.vcf), path(merged.vcf.tbi) ]
-        merged_vcf_tbi      = ch_merged_view.tbi        // channel: [ val(meta), path(merged.vcf), path(merged.vcf.tbi) ]
-        filtered_vcf        = ch_filtered_vcf.vcf           // channel: [ val(meta), path(filtered.vcf), path(filtered.vcf.tbi) ]
-        filtered_vcf_tbi    = ch_filtered_vcf.tbi       // channel: [ val(meta), path(filtered.vcf), path(filtered.vcf.tbi) ]
+        merged_vcf_tbi      = ch_merged_view.tbi            // channel: [ val(meta), path(merged.vcf), path(merged.vcf.tbi) ]
+        filtered_vcf        = ch_filtered_vcf.vcf     // channel: [ val(meta), path(filtered.vcf), path(filtered.vcf.tbi) ]
+        filtered_vcf_tbi    = ch_filtered_vcf.tbi     // channel: [ val(meta), path(filtered.vcf), path(filtered.vcf.tbi) ]
+        // filtered_vcf        = ch_filtered_vcf_fixed.vcf     // channel: [ val(meta), path(filtered.vcf), path(filtered.vcf.tbi) ]
+        // filtered_vcf_tbi    = ch_filtered_vcf_fixed.tbi     // channel: [ val(meta), path(filtered.vcf), path(filtered.vcf.tbi) ]
 
 }

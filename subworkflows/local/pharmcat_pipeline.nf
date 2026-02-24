@@ -11,12 +11,13 @@ workflow PHARMCAT_PIPELINE {
     ch_vcf                      // channel: [ val(meta), [ vcf ], [ tbi ] ]
     ch_ref_fasta                // channel: [ val(meta), path(fasta) ]
     ch_ref_fasta_index          // channel: [ val(meta), path(fasta_index) ]
-    ch_pharmcat_positions_vcf   // channel: [ val(meta), path(pharmcat_positions_vcf) ]
+    ch_pc_pos                   // channel: [ val(meta), path(pharmcat_positions_vcf), path(pharmcat_positions_vcf_index) ]
+    ch_pc_uniallelic_pos        // channel: [ val(meta), path(pharmcat_uniallelic_pos_vcf), path(pharmcat_uniallelic_pos_vcf_index) ]
 
     main:
 
     // VCF Preprocessing
-    PHARMCAT_VCFPREPROCESSOR(ch_vcf, ch_ref_fasta, ch_ref_fasta_index, ch_pharmcat_positions_vcf).set { ch_preprocessed_vcf } 
+    PHARMCAT_VCFPREPROCESSOR(ch_vcf, ch_ref_fasta, ch_ref_fasta_index, ch_pc_pos, ch_pc_uniallelic_pos).set { ch_preprocessed_vcf } 
     TABIX_TABIX(ch_preprocessed_vcf.preprocessed_vcf).set { ch_preprocessed_vcf_tbi }
 
     // Pharmcat Alelle Matching

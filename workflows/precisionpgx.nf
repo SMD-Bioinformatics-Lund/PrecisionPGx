@@ -84,40 +84,54 @@ workflow PRECISIONPGX {
     //
     // Gather built indices or get them from the params
     //
-    ch_bait_intervals           = ch_references.bait_intervals
-    ch_target_bed               = ch_references.target_bed
-    ch_target_intervals         = ch_references.target_intervals
-    ch_call_interval            = params.call_interval                      ? Channel.fromPath(params.call_interval).map {it -> [[id:it.simpleName], it]}.collect()
-                                                                            : Channel.value([[:],[]])
-    ch_genome_bwaindex          = params.bwa                                ? Channel.fromPath(params.bwa).map {it -> [[id:it.simpleName], it]}.collect()
-                                                                            : ch_references.genome_bwa_index
-    ch_genome_bwamem2index      = params.bwamem2                            ? Channel.fromPath(params.bwamem2).map {it -> [[id:it.simpleName], it]}.collect()
-                                                                            : ch_references.genome_bwamem2_index
-    ch_genome_bwamemeindex      = params.bwameme                            ? Channel.fromPath(params.bwameme).map {it -> [[id:it.simpleName], it]}.collect()
-                                                                            : ch_references.genome_bwameme_index
-    ch_genome_chrsizes          = ch_references.genome_chrom_sizes
-    ch_genome_fai               = ch_references.genome_fai
-    ch_genome_dictionary        = ch_references.genome_dict
-    ch_ml_model                 = params.variant_caller.equals('sentieon')  ? Channel.fromPath(params.ml_model).map {it -> [[id:it.simpleName], it]}.collect()
-                                                                            : Channel.value([[:],[]])
+    ch_bait_intervals               = ch_references.bait_intervals
+    ch_target_bed                   = ch_references.target_bed
+    ch_target_intervals             = ch_references.target_intervals
+    ch_call_interval                = params.call_interval                      ? Channel.fromPath(params.call_interval).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : Channel.value([[:],[]])
+    ch_genome_bwaindex              = params.bwa                                ? Channel.fromPath(params.bwa).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : ch_references.genome_bwa_index
+    ch_genome_bwamem2index          = params.bwamem2                            ? Channel.fromPath(params.bwamem2).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : ch_references.genome_bwamem2_index
+    ch_genome_bwamemeindex          = params.bwameme                            ? Channel.fromPath(params.bwameme).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : ch_references.genome_bwameme_index
+    ch_genome_chrsizes              = ch_references.genome_chrom_sizes
+    ch_genome_fai                   = ch_references.genome_fai
+    ch_genome_dictionary            = ch_references.genome_dict
+    ch_ml_model                     = params.variant_caller.equals('sentieon')  ? Channel.fromPath(params.ml_model).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : Channel.value([[:],[]])
 
-    ch_intervals_wgs            = params.intervals_wgs                      ? Channel.fromPath(params.intervals_wgs).collect()
-                                                                            : Channel.empty()
-    ch_svd_bed                  = params.verifybamid_svd_bed                ? Channel.fromPath(params.verifybamid_svd_bed)
-                                                                            : Channel.empty()
-    ch_svd_mu                   = params.verifybamid_svd_mu                 ? Channel.fromPath(params.verifybamid_svd_mu)
-                                                                            : Channel.empty()
-    ch_svd_ud                   = params.verifybamid_svd_ud                 ? Channel.fromPath(params.verifybamid_svd_ud)
-                                                                            : Channel.empty()
+    ch_intervals_wgs                = params.intervals_wgs                      ? Channel.fromPath(params.intervals_wgs).collect()
+                                                                                : Channel.empty()
+    ch_svd_bed                      = params.verifybamid_svd_bed                ? Channel.fromPath(params.verifybamid_svd_bed)
+                                                                                : Channel.empty()
+    ch_svd_mu                       = params.verifybamid_svd_mu                 ? Channel.fromPath(params.verifybamid_svd_mu)
+                                                                                : Channel.empty()
+    ch_svd_ud                       = params.verifybamid_svd_ud                 ? Channel.fromPath(params.verifybamid_svd_ud)
+                                                                                : Channel.empty()
 
-    ch_sentieon_emit_vcf        = params.emit_mode.equals('gvcf')           ? Channel.value(false) : Channel.value(params.emit_mode)
-    ch_sentieon_emit_gvcf       = params.emit_mode.equals('gvcf')           ? Channel.value(params.emit_mode) : Channel.value(false)
-    ch_pc_positions_vcf         = params.pharmcat_positions_vcf             ? Channel.fromPath(params.pharmcat_positions_vcf).map {it -> [[id:it.simpleName], it]}.collect()
-                                                                            : Channel.value([[:],[]])
-    ch_pc_positions_vcf_tbi     = params.pharmcat_positions_vcf_tbi         ? Channel.fromPath(params.pharmcat_positions_vcf_tbi).map {it -> [[id:it.simpleName], it]}.collect()
-                                                                            : Channel.value([[:],[]])
+    ch_sentieon_emit_vcf            = params.emit_mode.equals('gvcf')           ? Channel.value(false) : Channel.value(params.emit_mode)
+    ch_sentieon_emit_gvcf           = params.emit_mode.equals('gvcf')           ? Channel.value(params.emit_mode) : Channel.value(false)
 
-    ch_versions                 = ch_versions.mix(ch_references.versions)
+    // Pharmcat 
+    ch_pc_positions_vcf             = params.pharmcat_positions                 ? Channel.fromPath(params.pharmcat_positions).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : Channel.value([[:],[]])
+    ch_pc_positions_vcf_index       = params.pharmcat_positions_index           ? Channel.fromPath(params.pharmcat_positions_index).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : Channel.value([[:],[]])
+
+    ch_pc_uniallelic_pos_vcf        = params.pharmcat_uniallelic_pos            ? Channel.fromPath(params.pharmcat_uniallelic_pos).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : Channel.value([[:],[]])
+    ch_pc_uniallelic_pos_vcf_index  = params.pharmcat_uniallelic_pos_index      ? Channel.fromPath(params.pharmcat_uniallelic_pos_index).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : Channel.value([[:],[]])
+
+    ch_pc_reference_fasta           = params.pharmcat_reference_fasta           ? Channel.fromPath(params.pharmcat_reference_fasta).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : Channel.value([[:],[]])
+    ch_pc_reference_fasta_index     = params.pharmcat_reference_fasta_index     ? Channel.fromPath(params.pharmcat_reference_fasta_index).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : Channel.value([[:],[]])
+    ch_pc_reference_fasta_fai       = params.pharmcat_reference_fasta_fai       ? Channel.fromPath(params.pharmcat_reference_fasta_fai).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                                : Channel.value([[:],[]])
+
+    ch_versions                     = ch_versions.mix(ch_references.versions)
 
 
     //
@@ -235,7 +249,7 @@ workflow PRECISIONPGX {
         ch_pc_positions_vcf.map {
             meta, pc_vcf -> [ pc_vcf ]
         },
-        ch_pc_positions_vcf_tbi.map {
+        ch_pc_positions_vcf_index.map {
             meta, pc_vcf_tbi -> [ pc_vcf_tbi ]
         }
     )
@@ -270,14 +284,23 @@ workflow PRECISIONPGX {
     //
 
     PHARMCAT_PIPELINE(
-        ch_filtered_haplotypes.merged_vcf.join(
-            ch_filtered_haplotypes.merged_vcf_tbi, 
+        ch_filtered_haplotypes.filtered_vcf.join(
+            ch_filtered_haplotypes.filtered_vcf_tbi, 
             failOnMismatch:true, 
             failOnDuplicate:true
         ), 
-        ch_genome_fasta, 
-        ch_genome_fai, 
-        ch_pc_positions_vcf,
+        ch_pc_reference_fasta, 
+        ch_pc_reference_fasta_fai, 
+        ch_pc_positions_vcf.join(
+            ch_pc_positions_vcf_index, 
+            failOnMismatch:true, 
+            failOnDuplicate:true
+        ),
+        ch_pc_uniallelic_pos_vcf.join(
+            ch_pc_uniallelic_pos_vcf_index, 
+            failOnMismatch:true, 
+            failOnDuplicate:true
+        ),
     )
     .set { ch_pharmcat }
 
