@@ -112,6 +112,10 @@ workflow PRECISIONPGX {
 
     ch_sentieon_emit_vcf        = params.emit_mode.equals('gvcf')           ? Channel.value(false) : Channel.value(params.emit_mode)
     ch_sentieon_emit_gvcf       = params.emit_mode.equals('gvcf')           ? Channel.value(params.emit_mode) : Channel.value(false)
+    ch_pc_positions_vcf         = params.pharmcat_positions_vcf             ? Channel.fromPath(params.pharmcat_positions_vcf).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                            : Channel.value([[:],[]])
+    ch_pc_positions_vcf_tbi     = params.pharmcat_positions_vcf_tbi         ? Channel.fromPath(params.pharmcat_positions_vcf_tbi).map {it -> [[id:it.simpleName], it]}.collect()
+                                                                            : Channel.value([[:],[]])
 
     ch_versions                 = ch_versions.mix(ch_references.versions)
 
@@ -202,24 +206,38 @@ workflow PRECISIONPGX {
     .set { ch_haplotypes }
 
 
-    ch_filter_vcf_input = ch_haplotypes.sentieon_vcf.mix(
+    ch_filter_vcf_input = channel.empty().mix(
         ch_haplotypes.sentieon_vcf,
         ch_haplotypes.gatk_vcf,
         ch_haplotypes.deepvariant_vcf
         )
     
-    ch_filter_vcf_input_tbi = ch_haplotypes.sentieon_vcf_tbi.mix(
+    ch_filter_vcf_input_tbi = channel.empty().mix(
         ch_haplotypes.sentieon_vcf_tbi,
         ch_haplotypes.gatk_vcf_tbi,
         ch_haplotypes.deepvariant_vcf_tbi
         )
 
 
+    ch_filter_vcf_input.join(
+        ch_filter_vcf_input_tbi, 
+        failOnMismatch:true, 
+        failOnDuplicate:true
+    ).set { ch_filter_vcf_input_joined }
+
     VARIANT_FILTRATION (
-        ch_filter_vcf_input.groupTuple(ch_filter_vcf_input_tbi),
+        ch_filter_vcf_input_joined,
         ch_genome_fasta,
         ch_genome_fai,
-        ch_target_bed
+        ch_target_bed.map {
+            meta, bed_path, bed_tbi -> [ meta, bed_path ]
+        },
+        ch_pc_positions_vcf.map {
+            meta, pc_vcf -> [ pc_vcf ]
+        },
+        ch_pc_positions_vcf_tbi.map {
+            meta, pc_vcf_tbi -> [ pc_vcf_tbi ]
+        }
     )
     .set { ch_filtered_haplotypes }
 
@@ -251,7 +269,16 @@ workflow PRECISIONPGX {
     // PHAMRCAT
     //
 
-    PHARMCAT_PIPELINE(ch_filtered_haplotypes.merged_vcf)
+    PHARMCAT_PIPELINE(
+        ch_filtered_haplotypes.merged_vcf.join(
+            ch_filtered_haplotypes.merged_vcf_tbi, 
+            failOnMismatch:true, 
+            failOnDuplicate:true
+        ), 
+        ch_genome_fasta, 
+        ch_genome_fai, 
+        ch_pc_positions_vcf,
+    )
     .set { ch_pharmcat }
 
 
