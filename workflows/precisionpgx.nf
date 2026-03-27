@@ -40,7 +40,15 @@ include { PREPARE_REFERENCES                                 } from '../subworkf
 include { QC_BAM                                             } from '../subworkflows/local/qc_bam'
 include { VARIANT_CALLING                                    } from '../subworkflows/local/variant_calling'
 include { VARIANT_FILTRATION                                 } from '../subworkflows/local/variant_filtration'
-include { PHARMCAT_PIPELINE                                  } from '../subworkflows/local/pharmcat_pipeline'
+include { VARIANT_FILTRATION as GVCF_FILTRATION              } from '../subworkflows/local/variant_filtration'
+//include { PHARMCAT_PIPELINE                                } from '../subworkflows/local/pharmcat_pipeline'
+include { PHARMCAT_VCF_PROCESSING                            } from '../subworkflows/local/pharmcat_vcf_processing'
+include { PHARMCAT_GENOTYPING_REPORTING                      } from '../subworkflows/local/pharmcat_genotyping_reporting'
+include { PHARMCAT_GENOTYPING_REPORTING as PHARMCAT_GENOTYPING_REPORTING_SELECTED    } from '../subworkflows/local/pharmcat_genotyping_reporting'
+include { TARGET_DEPTH                                       } from '../subworkflows/local/target_depth'
+include { CYP2D6_CALLING                                     } from '../subworkflows/local/cyp2d6_calling'
+//include { CNV_CALLING                                        } from '../subworkflows/local/cnv_calling'
+//include { HLA_CALLING                                        } from '../subworkflows/local/hla_calling'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -55,6 +63,25 @@ workflow PRECISIONPGX {
     ch_samples
 
     main:
+
+    def topic_versions = Channel.topic("versions")
+        .distinct()
+        .branch { entry ->
+            versions_file: entry instanceof Path
+            versions_tuple: true
+        }
+
+    def topic_versions_string = topic_versions.versions_tuple
+        .map { process, tool, version ->
+            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
+        }
+        .groupTuple(by:0)
+        .map { process, tool_versions ->
+            tool_versions.unique().sort()
+            "${process}:\n${tool_versions.join('\n')}"
+        }
+
+
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
@@ -213,6 +240,9 @@ workflow PRECISIONPGX {
         ch_genome_fasta,
         ch_genome_fai,
         ch_genome_dictionary,
+        ch_target_bed.map {
+            meta, bed_path, bed_tbi -> [ meta, bed_path ]
+        },
         ch_target_intervals,
         ch_sentieon_emit_vcf,
         ch_sentieon_emit_gvcf
@@ -239,6 +269,13 @@ workflow PRECISIONPGX {
         failOnDuplicate:true
     ).set { ch_filter_vcf_input_joined }
 
+    //Create gvcf channel
+    //ch_haplotypes.deepvariant_gvcf.join(
+    //    ch_haplotypes.deepvariant_gvcf_tbi,
+    //    failOnMismatch:true,
+    //    failOnDuplicate:true
+    //).set { ch_filter_gvcf_input_joined }
+
     VARIANT_FILTRATION (
         ch_filter_vcf_input_joined,
         ch_genome_fasta,
@@ -255,6 +292,23 @@ workflow PRECISIONPGX {
     )
     .set { ch_filtered_haplotypes }
 
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        TARGET DEPTH
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+    // TARGET DEPTHS
+    // output ch_targetdepths include target_depth_tsv   // channel: [ val(meta), path(tsv) ], target_pass_bed   // channel: [ val(meta), path(bed) ] 
+
+    TARGET_DEPTH (
+        ch_mapped.genome_bam_bai,
+        ch_target_bed.map {
+            meta, bed_path, bed_tbi -> [ meta, bed_path ]
+        }
+    )
+    .set { ch_targetdepths }
+
+
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -262,8 +316,15 @@ workflow PRECISIONPGX {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-    // TODO
-
+    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('cnv_calling'))){
+        // Input ch_targetdepths.target_depth_tsv
+        /*
+        CNV_CALLING (
+            ch_targetdepths.target_depth_tsv
+        )
+        .set { ch_cnvcalls }
+        */
+    }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -271,24 +332,33 @@ workflow PRECISIONPGX {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-    // TODO
+    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('hla_calling'))){
+        // Input ch_mapped.genome_bam_bai
+        /*
+        HLA_CALLING (
+            ch_mapped.genome_bam_bai
+        )
+        .set { ch_hlacalls }
+        */
+    }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        PHARMCAT
+        PHARMCAT VCF PROCESSING
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
     //
-    // PHAMRCAT
+    // PHARMCAT
     //
+    ch_filtered_haplotypes.filtered_vcf.join(
+        ch_filtered_haplotypes.filtered_vcf_tbi,
+        failOnMismatch:true,
+        failOnDuplicate:true
+    ).set { ch_pharmcat_input_joined }
 
-    PHARMCAT_PIPELINE(
-        ch_filtered_haplotypes.filtered_vcf.join(
-            ch_filtered_haplotypes.filtered_vcf_tbi, 
-            failOnMismatch:true, 
-            failOnDuplicate:true
-        ), 
+    PHARMCAT_VCF_PROCESSING(
+        ch_pharmcat_input_joined, 
         ch_pc_reference_fasta, 
         ch_pc_reference_fasta_fai, 
         ch_pc_positions_vcf.join(
@@ -301,11 +371,59 @@ workflow PRECISIONPGX {
             failOnMismatch:true, 
             failOnDuplicate:true
         ),
+        ch_targetdepths.target_pass_bed
     )
     .set { ch_pharmcat }
 
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        PHARMCAT GENOTYPING REPORTING
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
+    //Generate complete report
+    if ( params.pharmcat_complete_report ){
+
+        PHARMCAT_GENOTYPING_REPORTING(
+            ch_pharmcat.preprocessed_vcf_pass.join(
+                ch_pharmcat.preprocessed_vcf_pass_tbi,
+                failOnMismatch:true,
+                failOnDuplicate:true
+            )
+        )
+        .set { ch_pharmcat_complete }
+    }
 
 
+    //Generate report with selected genes
+    if ( params.pharmcat_selected_report ){
+
+        PHARMCAT_GENOTYPING_REPORTING_SELECTED(
+            ch_pharmcat.preprocessed_vcf_pass.join(
+                ch_pharmcat.preprocessed_vcf_pass_tbi,
+                failOnMismatch:true,
+                failOnDuplicate:true
+            )
+        )
+        .set { ch_pharmcat_selected }
+    }
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        CYP2D6 CALLING
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('cyp2d6_calling'))){
+
+        CYP2D6_CALLING(
+            ch_pharmcat.preprocessed_vcf_pass.join(
+                ch_pharmcat.preprocessed_vcf_pass_tbi,
+                failOnMismatch:true,
+                failOnDuplicate:true
+            )
+        )
+        .set { ch_cyp2d6 }
+    }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -315,7 +433,9 @@ workflow PRECISIONPGX {
 
     //
     // TASK: Aggregate software versions
+
     //
+    /*
     def topic_versions = Channel.topic("versions")
         .distinct()
         .branch { entry ->
@@ -332,6 +452,7 @@ workflow PRECISIONPGX {
             tool_versions.unique().sort()
             "${process}:\n${tool_versions.join('\n')}"
         }
+    */
 
     softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
         .mix(topic_versions_string)

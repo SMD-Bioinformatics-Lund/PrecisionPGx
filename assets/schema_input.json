@@ -49,7 +49,7 @@
                     }
                 ],
                 "meta": ["lane"],
-                "errorMessage": "Lane must be an interger or a string that cannot contain spaces"
+                "errorMessage": "Lane must be an integer or a string that cannot contain spaces"
             },
             "fastq_1": {
                 "errorMessage": "Gzipped FastQ file for reads 1 must be provided, has to exist, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'",
@@ -92,6 +92,18 @@
                 "pattern": "^\\S+\\.bai$",
                 "format": "file-path",
                 "exists": true
+            },
+	    "seq_type": {
+                "type": "string",
+		"enum": ["dna", "rna"],
+                "meta": ["seq_type"],
+                "errorMessage": "seq_type must be 'dna' or 'rna'"
+            },
+	    "genes": {
+                "type": "string",
+                "meta": ["genes"],
+                "pattern": "^\\S+$",
+                "errorMessage": "Comma-separated list of genes to be analysed and reported. Cannot contain spaces"
             }
         },
         "uniqueEntries": ["case_id", "sample"],
@@ -104,6 +116,11 @@
             {
                 "dependentRequired": {
                     "lane": ["spring_1"]
+                }
+            },
+	    {
+                "dependentRequired": {
+                    "lane": ["bam"]
                 }
             }
         ],

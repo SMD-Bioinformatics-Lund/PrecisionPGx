@@ -1,5 +1,5 @@
 process PHARMCAT_VCFPREPROCESSOR {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
@@ -32,7 +32,7 @@ process PHARMCAT_VCFPREPROCESSOR {
         --reference-genome ${fasta} \\
         --reference-pgx-vcf ${pharmcat_positions} \\
         --output-dir . \\
-        $args
+        ${args}
     """
 
     stub:
