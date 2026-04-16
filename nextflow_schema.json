@@ -245,7 +245,7 @@
             "fa_icon": "fas fa-forward",
             "description": "Disable specified subworkflows.",
             "help_text": "Multiple subworkflows can be specified, separated by commas.",
-            "pattern": "^((me_calling|me_annotation|mt_annotation|mt_subsample|repeat_annotation|repeat_calling|snv_annotation|snv_calling|sv_annotation|sv_calling|generate_clinical_set)?,?)*(?<!,)$"
+            "pattern": "^((cyp2d6_calling|hla_calling|cnv_calling)?,?)*(?<!,)$"
           },
           "skip_tools": {
             "type": "string",
@@ -329,6 +329,12 @@
             "fa_icon": "fas fa-bacon",
             "description": "Minimum depth required for a variant call to be retained.",
             "help_text": "Minimum depth required for a variant call to be retained."
+          },
+	  "filter_vcf": {
+            "type": "boolean",
+            "fa_icon": "fas fa-user-cog",
+            "description": "Filter VCFs by quality and read depth.",
+            "help_text": "If true, variants are filtered by quality and read depth before pharmacogenetic genotyping."
           }
         }
       },
@@ -355,8 +361,8 @@
             "type": "string",
             "exists": true,
             "format": "directory-path",
-            "description": "Directory for phamrcat resouces.",
-            "help_text": "Directory for phamrcat resouces.",
+            "description": "Directory for pharmcat resources.",
+            "help_text": "Directory for pharmcat resources.",
             "fa_icon": "fas fa-folder-open"
           },
           "pharmcat_positions_vcf": {
@@ -365,8 +371,99 @@
             "format": "path",
             "fa_icon": "fas fa-file",
             "pattern": "^\\S+\\.vcf(\\.gz)?$",
-            "description": "Path to directory for phamrcat positions vcf file.",
-            "help_text": "If you would like to limit your haplotype calling analysis or to check if all the phamrcat positions are covered, you can pass those regions in a vcf file using this option"
+            "description": "Path to pharmcat positions vcf file.",
+            "help_text": "If you would like to limit your haplotype calling analysis or to check if all the pharmcat positions are covered, you can pass those regions in a vcf file using this option"
+          },
+	  "pharmcat_positions": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.vcf(\\.gz)?$",
+            "description": "Path to pharmcat positions vcf file.",
+            "help_text": "Positions used by PharmCAT."
+          },
+	  "pharmcat_positions_no_chr": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.vcf(\\.gz)?$",
+            "description": "Path to pharmcat positions vcf file where chr are annotated without chr.",
+            "help_text": "Positions used by PharmCAT."
+          },
+          "pharmcat_positions_index": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.tbi$",
+            "description": "Path to pharmcat positions vcf file index.",
+            "help_text": "Index for positions used by PharmCAT."
+          },
+	  "pharmcat_uniallelic_pos": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.vcf(\\.bgz)?$",
+            "description": "Path to uniallelic pharmcat positions vcf file.",
+            "help_text": "Uniallelic positions used by PharmCAT."
+          },
+	  "pharmcat_uniallelic_pos_index": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.csi$",
+            "description": "Path to index of uniallelic pharmcat positions vcf file.",
+            "help_text": "Index of uniallelic positions used by PharmCAT."
+          },
+          "pharmcat_reference_fasta": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.fna(\\.bgz)?$",
+            "description": "Path to pharmcat reference fasta file.",
+            "help_text": "Reference fasta file used by PharmCAT."
+          },
+          "pharmcat_reference_fasta_index": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.gzi$",
+            "description": "Path to index of pharmcat reference fasta.",
+            "help_text": "Index of PharmCAT reference fasta."
+          },
+	  "pharmcat_reference_fasta_fai": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "fa_icon": "fas fa-file",
+            "pattern": "^\\S+\\.fai$",
+            "description": "Path to fai index of pharmcat reference fasta.",
+            "help_text": "Index of PharmCAT reference fasta."
+          },
+          "pharmcat_reporter_sources": {
+            "type": "string",
+            "fa_icon": "fas fa-forward",
+            "description": "Specifies the sources used for annotation by PharmCAT",
+            "help_text": "Specifies the sources used for annotation by PharmCAT, separated by commas. Not all genes have annotation in all sources.",
+            "pattern": "^((CPIC|FDA|DPWG)?,?)*(?<!,)$"
+          },
+	  "pharmcat_complete_report": {
+            "type": "boolean",
+            "fa_icon": "fas fa-user-cog",
+            "description": "Generate complete PharmCAT reports.",
+            "help_text": "A complete report includes all genes annotated by PharmCAT and covered by the input data"
+          },
+	  "pharmcat_selected_report": {
+            "type": "boolean",
+            "fa_icon": "fas fa-user-cog",
+            "description": "Generate PharmCAT reports with selected genes",
+            "help_text": "Set the genes to include in the selected reports in the input samplesheet, column genes."
           }
         },
         "dependentRequired": {

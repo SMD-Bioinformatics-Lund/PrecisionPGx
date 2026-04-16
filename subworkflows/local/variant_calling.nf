@@ -1,6 +1,7 @@
 include { SENTIEON_HAPLOTYPER                       } from '../../modules/nf-core/sentieon/haplotyper'
 include { GATK4_HAPLOTYPECALLER                     } from '../../modules/nf-core/gatk4/haplotypecaller'
 include { DEEPVARIANT_RUNDEEPVARIANT                } from '../../modules/nf-core/deepvariant/rundeepvariant'
+//include { TABIX_BGZIPTABIX                          } from '../../modules/nf-core/tabix/bgziptabix'
 
 //include { AGGREGATE_VCFS                            } from '../../modules/local/aggregate_vcfs/main'
 
@@ -13,6 +14,7 @@ workflow VARIANT_CALLING {
         ch_ref_fasta             // channel: [ val(meta), path(fasta) ]
         ch_ref_fasta_index       // channel: [ val(meta), path(fasta_index) ]
         ch_ref_dict              // channel: [ val(meta), path(fasta_dict) ]
+        ch_target_bed            // channel: [ val(meta), path(target_bed) ]
         ch_intervals             // channel: [ path(intervals) ]
         val_sentieon_emit_vcf    // boolean: [ optional ] applicable when the haplotyper is sentieon and emit mode is vcf
         val_sentieon_emit_gvcf   // boolean: [ optional ] applicable when the haplotyper is sentieon and emit mode is gvcf
@@ -63,7 +65,13 @@ workflow VARIANT_CALLING {
 
 
         // DEEP VARIANT
-        ch_deepvariant_input = bam_bai_ch.map { meta, bam, bai -> return [ meta, bam, bai, [] ] }
+        // Provide the target bed to DEEPVARIANT
+        bam_bai_ch.combine(ch_target_bed.map { meta, target_bed -> return target_bed}).set {ch_targeted_variant_calls_input}
+        ch_deepvariant_input = ch_targeted_variant_calls_input.map { meta, bam, bai, target_bed ->
+            return [ meta, bam, bai, target_bed ]
+        }
+
+        //ch_deepvariant_input = bam_bai_ch.map { meta, bam, bai -> return [ meta, bam, bai, [] ] }
         DEEPVARIANT_RUNDEEPVARIANT (
             ch_deepvariant_input,
             ch_ref_fasta,

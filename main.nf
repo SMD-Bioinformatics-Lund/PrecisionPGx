@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Lund/precisionpgx
+    precisionpgx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Github : https://github.com/SMD-Bioinformatics-Lund/PrecisionPGx
 ----------------------------------------------------------------------------------------
@@ -28,7 +28,7 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_prec
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
-workflow LUND_PRECISIONPGX {
+workflow PRECISIONPGX_MAIN {
 
     take:
     fastq
@@ -72,7 +72,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    LUND_PRECISIONPGX (
+    PRECISIONPGX_MAIN (
         PIPELINE_INITIALISATION.out.reads,
         PIPELINE_INITIALISATION.out.align,
         PIPELINE_INITIALISATION.out.samples,
@@ -87,7 +87,7 @@ workflow {
         params.outdir,
         params.monochrome_logs,
         params.hook_url,
-        LUND_PRECISIONPGX.out.multiqc_report
+        PRECISIONPGX_MAIN.out.multiqc_report
     )
 }
 

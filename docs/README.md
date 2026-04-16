@@ -4,16 +4,16 @@
 
 The PrecisionPGx documentation is split into the following pages:
 
-- [usage.md](docs/usage.md)
+- [usage.md](usage.md)
   - An overview of how the pipeline works, how to run it, requirements and a description of input parameters.
-- [output.md](docs/output.md)
+- [output.md](output.md)
   - An overview of the different results produced by the pipeline and how to interpret them.
-- [images](docs/images)
+- [images](images)
   - Workflow diagrams in different formats.
 
 ## Workflow
 
-![PrecisionPGx.svg](docs/images/PrecisionPGx.svg)
+![PrecisionPGx.svg](images/PrecisionPGx.svg)
 
 ## Installation
 Clone the repository:
