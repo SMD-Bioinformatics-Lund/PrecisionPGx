@@ -20,7 +20,6 @@ export_plots: true
 run_modules:
   - fastqc
   - fastp
-  - qualimap
   - picard
   - mosdepth
   - verifybamid
@@ -33,8 +32,6 @@ module_order:
         - "*.zip"
   - picard:
       name: "Picard"
-  - qualimap:
-      name: "Qualimap"
   - fastp:
       name: "fastp"
   - mosdepth:
