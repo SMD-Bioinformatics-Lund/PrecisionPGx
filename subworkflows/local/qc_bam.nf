@@ -10,6 +10,8 @@ include { MOSDEPTH                                                 } from '../..
 include { VERIFYBAMID_VERIFYBAMID2                                 } from '../../modules/nf-core/verifybamid/verifybamid2/main'
 include { PICARD_COLLECTWGSMETRICS as PICARD_COLLECTWGSMETRICS_WG  } from '../../modules/nf-core/picard/collectwgsmetrics/main'
 include { SENTIEON_WGSMETRICS as SENTIEON_WGSMETRICS_WG            } from '../../modules/nf-core/sentieon/wgsmetrics/main'
+include { SAMTOOLS_DEPTH                                           } from '../../modules/nf-core/samtools/depth'
+include { TARGET_PASS_REGIONS                                      } from '../../modules/local/target_pass_regions'
 
 workflow QC_BAM {
 
@@ -18,7 +20,8 @@ workflow QC_BAM {
         ch_genome_fasta             // channel: [mandatory] [ val(meta), path(fasta) ]
         ch_genome_fai               // channel: [mandatory] [ val(meta), path(fai) ]
         ch_genome_dict              // channel: [mandatory] [ val(meta), path(dict) ]
-        target_bed_uncompressed     // channel: [mandatory] [ path(target_bed) ]
+        ch_target_bed               // channel: [mandatory] [ val(meta), path(target_bed) ]
+        ch_target_bed_uncompressed  // channel: [mandatory] [ path(target_bed) ]
         ch_bait_intervals           // channel: [mandatory] [ path(intervals_list) ]
         ch_target_intervals         // channel: [mandatory] [ path(intervals_list) ]
         ch_intervals_wgs            // channel: [mandatory] [ path(intervals) ]
@@ -40,7 +43,7 @@ workflow QC_BAM {
 
         PICARD_COLLECTHSMETRICS (ch_hsmetrics_in, ch_genome_fasta, ch_genome_fai, ch_genome_dict, [[],[]])
 
-        ch_bam_bai.combine(target_bed_uncompressed).set{ch_mosdepth_in}
+        ch_bam_bai.combine(ch_target_bed_uncompressed).set{ch_mosdepth_in}
         MOSDEPTH (ch_mosdepth_in, ch_genome_fasta)
 
         // COLLECT WGS METRICS
@@ -59,6 +62,17 @@ workflow QC_BAM {
         // Check contamination
         ch_svd_in = ch_svd_ud.combine(ch_svd_mu).combine(ch_svd_bed).collect()
         VERIFYBAMID_VERIFYBAMID2(ch_bam_bai, ch_svd_in, [], ch_genome_fasta.map {it-> it[1]})
+
+        // Samtools depth
+        SAMTOOLS_DEPTH (
+            ch_bam_bai,
+            ch_target_bed
+        )
+
+        // Create target pass regions bed
+        TARGET_PASS_REGIONS (
+            SAMTOOLS_DEPTH.out.tsv
+        )
         
     emit:
         multiple_metrics = PICARD_COLLECTMULTIPLEMETRICS.out.metrics // channel: [ val(meta), path(metrics) ]
@@ -68,5 +82,7 @@ workflow QC_BAM {
         global_dist      = MOSDEPTH.out.global_txt                   // channel: [ val(meta), path(txt) ]
         self_sm          = VERIFYBAMID_VERIFYBAMID2.out.self_sm      // channel: [ val(meta), path(selfSM) ]
         cov              = ch_cov                                    // channel: [ val(meta), path(metrics) ]
+        target_depth_tsv = SAMTOOLS_DEPTH.out.tsv                    // channel: [ val(meta), path(tsv) ]
+        target_pass_bed  = TARGET_PASS_REGIONS.out.pass_bed          // channel: [ val(meta), path(bed) ] 
         versions         = ch_versions                               // channel: [ path(versions.yml) ]
 }

@@ -114,6 +114,7 @@ workflow PRECISIONPGX {
     ch_bait_intervals               = ch_references.bait_intervals
     ch_target_bed                   = ch_references.target_bed
     ch_target_intervals             = ch_references.target_intervals
+    ch_target_bed_uncompressed      = ch_references.target_bed_uncompressed
     ch_call_interval                = params.call_interval                      ? Channel.fromPath(params.call_interval).map {it -> [[id:it.simpleName], it]}.collect()
                                                                                 : Channel.value([[:],[]])
     ch_genome_bwaindex              = params.bwa                                ? Channel.fromPath(params.bwa).map {it -> [[id:it.simpleName], it]}.collect()
@@ -210,12 +211,14 @@ workflow PRECISIONPGX {
     // BAM QUALITY CHECK
     //
     QC_BAM (
-        ch_mapped.genome_marked_bam,
-        ch_mapped.genome_marked_bai,
         ch_mapped.genome_bam_bai,
         ch_genome_fasta,
         ch_genome_fai,
         ch_genome_dictionary,
+        ch_target_bed.map {
+            meta, bed_path, bed_tbi -> [ meta, bed_path ]
+        },
+        ch_target_bed_uncompressed,
         ch_bait_intervals,
         ch_target_intervals,
         ch_intervals_wgs,
@@ -292,23 +295,6 @@ workflow PRECISIONPGX {
     )
     .set { ch_filtered_haplotypes }
 
-    /*
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        TARGET DEPTH
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    */
-    // TARGET DEPTHS
-    // output ch_targetdepths include target_depth_tsv   // channel: [ val(meta), path(tsv) ], target_pass_bed   // channel: [ val(meta), path(bed) ] 
-
-    TARGET_DEPTH (
-        ch_mapped.genome_bam_bai,
-        ch_target_bed.map {
-            meta, bed_path, bed_tbi -> [ meta, bed_path ]
-        }
-    )
-    .set { ch_targetdepths }
-
-
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -317,10 +303,10 @@ workflow PRECISIONPGX {
     */
 
     if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('cnv_calling'))){
-        // Input ch_targetdepths.target_depth_tsv
+        // Input QC_BAM.out.target_depth_tsv
         /*
         CNV_CALLING (
-            ch_targetdepths.target_depth_tsv
+            QC_BAM.out.target_depth_tsv
         )
         .set { ch_cnvcalls }
         */
@@ -371,7 +357,7 @@ workflow PRECISIONPGX {
             failOnMismatch:true, 
             failOnDuplicate:true
         ),
-        ch_targetdepths.target_pass_bed
+        QC_BAM.out.target_pass_bed
     )
     .set { ch_pharmcat }
 
@@ -499,7 +485,6 @@ workflow PRECISIONPGX {
     ch_multiqc_files = ch_multiqc_files.mix(ALIGN.out.markdup_metrics.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.multiple_metrics.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.hs_metrics.map{it[1]}.collect().ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.qualimap_results.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.global_dist.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.cov.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.self_sm.map{it[1]}.collect().ifEmpty([]))
