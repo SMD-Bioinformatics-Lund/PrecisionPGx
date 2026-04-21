@@ -34,7 +34,10 @@ workflow PREPARE_REFERENCES {
 
         // Genome indices
         // TODO: Update this  to get the sizes from the fai file.
-        SAMTOOLS_FAIDX_GENOME(ch_genome_fasta, [[],[]], false) 
+        SAMTOOLS_FAIDX_GENOME(
+            ch_genome_fasta.join(ch_genome_fai), 
+            false
+        ) 
         GATK_SD(ch_genome_fasta)
         ch_fai  = Channel.empty().mix(ch_genome_fai, SAMTOOLS_FAIDX_GENOME.out.fai).collect()
         ch_dict = Channel.empty().mix(ch_genome_dictionary, GATK_SD.out.dict).collect()
@@ -83,15 +86,16 @@ workflow PREPARE_REFERENCES {
         ch_versions = ch_versions.mix(GET_CHROM_SIZES.out.versions)
 
     emit:
-        genome_bwa_index      = Channel.empty().mix(ch_bwa, ch_sentieonbwa).collect()                        // channel: [ val(meta), path(index) ]
-        genome_bwamem2_index  = BWAMEM2_INDEX_GENOME.out.index.collect()                                     // channel: [ val(meta), path(index) ]
-        genome_bwameme_index  = BWAMEME_INDEX_GENOME.out.index.collect()                                     // channel: [ val(meta), path(index) ]
-        genome_chrom_sizes    = GET_CHROM_SIZES.out.sizes.collect()                                          // channel: [ path(sizes) ]
-        genome_fai            = ch_fai                                                                       // channel: [ val(meta), path(fai) ]
-        genome_dict           = ch_dict                                                                      // channel: [ val(meta), path(dict) ]
-        target_bed            = ch_target_bed_gz_tbi.collect()                                               // channel: [ val(meta), path(bed), path(tbi) ]
-        bait_intervals        = CAT_CAT_BAIT.out.file_out.map{ meta, inter -> inter}.collect().ifEmpty([[]]) // channel: [ path(intervals) ]
-        target_intervals      = GATK_BILT.out.interval_list.map{ meta, inter -> inter}.collect()             // channel: [ path(interval_list) ]
-        versions              = ch_versions                                                                  // channel: [ path(versions.yml) ]
+        genome_bwa_index        = Channel.empty().mix(ch_bwa, ch_sentieonbwa).collect()                                 // channel: [ val(meta), path(index) ]
+        genome_bwamem2_index    = BWAMEM2_INDEX_GENOME.out.index.collect()                                              // channel: [ val(meta), path(index) ]
+        genome_bwameme_index    = BWAMEME_INDEX_GENOME.out.index.collect()                                              // channel: [ val(meta), path(index) ]
+        genome_chrom_sizes      = GET_CHROM_SIZES.out.sizes.collect()                                                   // channel: [ path(sizes) ]
+        genome_fai              = ch_fai                                                                                // channel: [ val(meta), path(fai) ]
+        genome_dict             = ch_dict                                                                               // channel: [ val(meta), path(dict) ]
+        target_bed_uncompressed = BEDTOOLS_PAD_TARGET_BED.out.bed.map{ meta, inter -> inter}.collect().ifEmpty([[]])    // channel: [ val(meta), path(bed) ]
+        target_bed              = ch_target_bed_gz_tbi.collect()                                                        // channel: [ val(meta), path(bed), path(tbi) ]
+        bait_intervals          = CAT_CAT_BAIT.out.file_out.map{ meta, inter -> inter}.collect().ifEmpty([[]])          // channel: [ path(intervals) ]
+        target_intervals        = GATK_BILT.out.interval_list.map{ meta, inter -> inter}.collect()                      // channel: [ path(interval_list) ]
+        versions                = ch_versions                                                                           // channel: [ path(versions.yml) ]
 
 }
