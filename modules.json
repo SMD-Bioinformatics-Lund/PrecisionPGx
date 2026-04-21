@@ -5,13 +5,6 @@
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
-                    "bcftools/call": {
-                        "branch": "master",
-                        "git_sha": "6383d8fe58f9498eecd5aa303e71a4a932d1e9f6",
-                        "installed_by": [
-                            "modules"
-                        ]
-                    },
                     "bcftools/filter": {
                         "branch": "master",
                         "git_sha": "6383d8fe58f9498eecd5aa303e71a4a932d1e9f6",
@@ -222,13 +215,6 @@
                             "modules"
                         ]
                     },
-                    "samtools/dict": {
-                        "branch": "master",
-                        "git_sha": "156feda0cb6589cd29c04902004fa3b53bc00205",
-                        "installed_by": [
-                            "modules"
-                        ]
-                    },
                     "samtools/faidx": {
                         "branch": "master",
                         "git_sha": "156feda0cb6589cd29c04902004fa3b53bc00205",
@@ -309,13 +295,6 @@
                     "sentieon/wgsmetrics": {
                         "branch": "master",
                         "git_sha": "77fc71f9384035ef6259e0e0519d3406b0cda012",
-                        "installed_by": [
-                            "modules"
-                        ]
-                    },
-                    "seqtk/sample": {
-                        "branch": "master",
-                        "git_sha": "a46713779030a5f508117080cbf4b693dd4c6e33",
                         "installed_by": [
                             "modules"
                         ]
