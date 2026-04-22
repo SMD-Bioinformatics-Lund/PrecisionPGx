@@ -11,7 +11,6 @@
 include { UTILS_NFSCHEMA_PLUGIN     } from '../../nf-core/utils_nfschema_plugin'
 include { paramsSummaryMap          } from 'plugin/nf-schema'
 include { samplesheetToList         } from 'plugin/nf-schema'
-include { paramsHelp                } from 'plugin/nf-schema'
 include { completionEmail           } from '../../nf-core/utils_nfcore_pipeline'
 include { completionSummary         } from '../../nf-core/utils_nfcore_pipeline'
 include { imNotification            } from '../../nf-core/utils_nfcore_pipeline'
@@ -28,11 +27,14 @@ workflow PIPELINE_INITIALISATION {
 
     take:
     version           // boolean: Display version and exit
-    validate_params   // boolean: Validate parameters against schema at runtime
-    monochrome_logs   // boolean: Disable ANSI colours
-    nextflow_cli_args //   array: Positional nextflow CLI args
-    outdir            //  string: Output directory
+    validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
+    monochrome_logs   // boolean: Do not use coloured log outputs
+    nextflow_cli_args //   array: List of positional nextflow CLI args
+    outdir            //  string: The output directory where the results will be saved
     input             //  string: Path to input samplesheet
+    help              // boolean: Display help message and exit
+    help_full         // boolean: Show the full help message
+    show_hidden       // boolean: Show hidden parameters in the help message
 
     main:
 
@@ -46,18 +48,41 @@ workflow PIPELINE_INITIALISATION {
         workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1
     )
 
+
+    //
+    // Validate parameters and generate parameter summary to stdout
+    //
+    before_text = """
+-\033[2m----------------------------------------------------\033[0m-
+                                        \033[0;32m,--.\033[0;30m/\033[0;32m,-.\033[0m
+\033[0;34m        ___     __   __   __   ___     \033[0;32m/,-._.--~\'\033[0m
+\033[0;34m  |\\ | |__  __ /  ` /  \\ |__) |__         \033[0;33m}  {\033[0m
+\033[0;34m  | \\| |       \\__, \\__/ |  \\ |___     \033[0;32m\\`-._,-`-,\033[0m
+                                        \033[0;32m`._,._,\'\033[0m
+\033[0;35m  nf-core/precisionpgx ${workflow.manifest.version}\033[0m
+-\033[2m----------------------------------------------------\033[0m-
+"""
+    after_text = """${workflow.manifest.doi ? "\n* The pipeline\n" : ""}${workflow.manifest.doi.tokenize(",").collect { doi -> "    https://doi.org/${doi.trim().replace('https://doi.org/','')}"}.join("\n")}${workflow.manifest.doi ? "\n" : ""}
+* The nf-core framework
+    https://doi.org/10.1038/s41587-020-0439-x
+
+* Software dependencies
+    https://github.com/SMD-Bioinformatics-Lund/PrecisionPGx/blob/master/CITATIONS.md
+"""
+    command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --input samplesheet.csv --outdir <OUTDIR>"
+
     
     // Validate parameters against schema at runtime
     UTILS_NFSCHEMA_PLUGIN(
         workflow,
         validate_params,
         null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
+        help,
+        help_full,
+        show_hidden,
+        before_text,
+        after_text,
+        command
     )
 
     //
@@ -155,7 +180,7 @@ workflow PIPELINE_COMPLETION {
     multiqc_report  // path: multiqc report
 
     main:
-    summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = paramsSummaryMap(workflow, parameters_schema:  "nextflow_schema.json")
     def multiqc_reports = multiqc_report.toList()
 
     // Send completion email and summary
@@ -362,7 +387,6 @@ def toolCitationText() {
         (params.skip_tools && params.skip_tools.split(',').contains('fastp')) ? "" : "Fastp (Chen, 2023),"
     ]
 
-    // TODO:
     other_citation_text = [
         "BCFtools (Danecek et al., 2021),",
         "BEDTools (Quinlan & Hall, 2010),",
@@ -419,7 +443,7 @@ def toolBibliographyText() {
         params.analysis_type.equals('panel') ? "" : "<li>Freed, D., Aldana, R., Weber, J. A., & Edwards, J. S. (2017). The Sentieon Genomics Tools–A fast and accurate solution to variant calling from next-generation sequence data. BioRxiv, 115717.</li>",
     ]
 
-    def pharmcat_text = [
+    pharmcat_text = [
         "Sangkuhl, K., Whirl‐Carrillo, M., Whaley, R. M., Woon, M., Lavertu, A., Altman, R. B., ... & Klein, T. E. (2020). Pharmacogenomics clinical annotation tool (Pharm CAT). Clinical Pharmacology & Therapeutics, 107(1), 203-210.",
         "Klein, T. E., & Ritchie, M. D. (2018). PharmCAT: a pharmacogenomics clinical annotation tool. Clinical Pharmacology & Therapeutics, 104(1), 19-22."
     ]
