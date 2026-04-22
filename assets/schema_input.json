@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://github.com/SMD-Bioinformatics-Lund/PrecisionPGx/master/assets/schema_input.json",
-    "title": "SMD-Bioinformatics-Lund/PrecisionPGx pipeline - params.input schema",
+    "title": "nf-core/PrecisionPGx pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
     "type": "array",
     "items": {

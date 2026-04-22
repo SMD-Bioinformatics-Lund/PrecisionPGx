@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/SMD-Bioinformatics-Lund/PrecisionPGx/master/nextflow_schema.json",
-    "title": "SMD-Bioinformatics-Lund/PrecisionPGx pipeline parameters",
+    "title": "nf-core/PrecisionPGx pipeline parameters",
     "description": "call and score variants from WGS/WES of rare disease patients",
     "type": "object",
     "$defs": {

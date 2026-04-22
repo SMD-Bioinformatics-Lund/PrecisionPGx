@@ -1,5 +1,5 @@
 {
-    "name": "SMD-Bioinformatics-Lund/precisionpgx",
+    "name": "nf-core/precisionpgx",
     "homePage": "https://github.com/SMD-Bioinformatics-Lund/precisionpgx",
     "repos": {
         "https://github.com/nf-core/modules.git": {
