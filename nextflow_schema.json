@@ -351,12 +351,6 @@
         "fa_icon": "fas fa-user-cog",
         "description": "Options for running pharmcat annotation and reporting",
         "properties": {
-          "pharmcat": {
-            "type": "boolean",
-            "fa_icon": "fas fa-user-cog",
-            "description": "Run pharmcat annotation and reporting?",
-            "help_text": "Run pharmcat annotation and reporting?"
-          },
           "pharmcat_resource_dir": {
             "type": "string",
             "exists": true,
@@ -383,15 +377,6 @@
             "description": "Path to pharmcat positions vcf file.",
             "help_text": "Positions used by PharmCAT."
           },
-	  "pharmcat_positions_no_chr": {
-            "type": "string",
-            "exists": true,
-            "format": "path",
-            "fa_icon": "fas fa-file",
-            "pattern": "^\\S+\\.vcf(\\.gz)?$",
-            "description": "Path to pharmcat positions vcf file where chr are annotated without chr.",
-            "help_text": "Positions used by PharmCAT."
-          },
           "pharmcat_positions_index": {
             "type": "string",
             "exists": true,
@@ -415,7 +400,7 @@
             "exists": true,
             "format": "path",
             "fa_icon": "fas fa-file",
-            "pattern": "^\\S+\\.csi$",
+            "pattern": "^\\S+\\.(tbi|csi)$",
             "description": "Path to index of uniallelic pharmcat positions vcf file.",
             "help_text": "Index of uniallelic positions used by PharmCAT."
           },

@@ -130,12 +130,6 @@ workflow PIPELINE_INITIALISATION {
                     }.unique()
 
 
-
-    //
-    // Validate PharmCAT inputs (resource dir / build / optional bed)
-    //
-    validatePharmcatParams()
-
     emit:
     reads     = ch_samplesheet_by_type.fastq
     align     = ch_samplesheet_by_type.align
@@ -217,7 +211,23 @@ def checkRequiredParameters(params) {
         "fasta",
         "input",
         "outdir",
+        "pharmcat_reporter_sources",
+        "pharmcat_complete_report",
+        "pharmcat_selected_report",
     ]
+
+    def pharmcatParams = [
+        "pharmcat_resource_dir",
+        "pharmcat_positions",
+        "pharmcat_positions_index",
+        "pharmcat_uniallelic_pos",
+        "pharmcat_uniallelic_pos_index",
+        "pharmcat_reference_fasta",
+        "pharmcat_reference_fasta_index",
+        "pharmcat_reference_fasta_fai",
+    ]
+
+    mandatoryParams += pharmcatParams
 
     // Static requirements that are not influenced by user-defined skips
     def staticRequirements   = [
@@ -228,7 +238,7 @@ def checkRequiredParameters(params) {
     // Requirements that can be modified by the user using either skip_tools or skip_subworkflows here
     def dynamicRequirements = [
         variant_calling              : ["genome"],
-        variant_annotation           : ["genome", "pharmcat"],
+        variant_annotation           : ["genome"],
     ]
 
     def missingParamsCount = 0
@@ -255,24 +265,16 @@ def checkRequiredParameters(params) {
         }
     }
 
+    pharmcatParams.unique().each { param ->
+        def p = file(params[param])
+        if (!p.exists()) error "PharmCAT resource file does not exist: ${params[param]}"
+    }
+
     if (missingParamsCount > 0) {
         error("\nSet missing parameters and restart the run. For more information please check usage documentation on github.")
     }
 }
 
-def validatePharmcatParams() {
-    // PharmCAT resource dir (depends on your execution model)
-    if (params.pharmcat_resource_dir) {
-        def p = file(params.pharmcat_resource_dir)
-        if (!p.exists()) error "PharmCAT resource dir does not exist: ${params.pharmcat_resource_dir}"
-    }
-
-    // pharmcat bed/intervals for calling (panel PGx)
-    if (params.pharmcat_positions_vcf) {
-        def v = file(params.pharmcat_positions_vcf)
-        if (!v.exists()) error "Pharmcat positions vcf file does not exist: ${params.pharmcat_positions_vcf}"
-    }
-}
 
 //
 // Validate channels from input samplesheet

@@ -242,7 +242,6 @@ params {
     //pharmcat                        = null
     //pharmcat_version                = null
     pharmcat_resource_dir           = null
-    pharmcat_positions_no_chr       = null
     pharmcat_positions_vcf          = null
     pharmcat_positions              = null
     pharmcat_positions_index        = null
@@ -424,7 +423,6 @@ pharmcat_reference_fasta_index: /path/to/pharmcat_reference_genome//HG38_p13_pha
 pharmcat_reference_fasta_fai: /path/to/pharmcat_reference_genome/HG38_p13_pharmcat/reference.fna.bgz.fai
 
 #PharmCAT position files
-pharmcat_positions_no_chr: /path/to/project/PrecisionPGx/assets/pharmcat_resources/pharmcat_positions_nochr_3.1.1.vcf.gz
 pharmcat_positions: /path/to/project//PrecisionPGx/assets/pharmcat_resources/pharmcat_positions_3.1.1.vcf.gz
 pharmcat_positions_index: /path/to/project//PrecisionPGx/assets/pharmcat_resources/pharmcat_positions_3.1.1.vcf.gz.tbi
 pharmcat_uniallelic_pos: /path/to/project//PrecisionPGx/assets/pharmcat_resources/pharmcat_positions_3.1.1.uniallelic.vcf.bgz

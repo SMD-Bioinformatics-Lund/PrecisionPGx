@@ -23,7 +23,7 @@
                 "type": "string",
                 "enum": ["T", "N"],
                 "meta": ["type"],
-                "errorMessage": "Sample Type must be provided and cannot contain spaces. It has to be one of this values: 'T, N'"
+                "errorMessage": "Sample type must be provided and cannot contain spaces. It has to be one of this values: 'T, N'"
             },
             "ffpe": {
                 "type": "boolean",
@@ -93,16 +93,16 @@
                 "format": "file-path",
                 "exists": true
             },
-	    "seq_type": {
+	        "seq_type": {
                 "type": "string",
-		"enum": ["dna", "rna"],
+		        "enum": ["dna", "rna"],
                 "meta": ["seq_type"],
                 "errorMessage": "seq_type must be 'dna' or 'rna'"
             },
-	    "genes": {
+	        "genes": {
                 "type": "string",
-                "meta": ["genes"],
                 "pattern": "^\\S+$",
+                "meta": ["genes"],
                 "errorMessage": "Comma-separated list of genes to be analysed and reported. Cannot contain spaces"
             }
         },
@@ -129,6 +129,6 @@
             "spring_2": ["spring_1"],
             "bam": ["bai"]
         },
-        "required": ["sample", "type", "case_id"]
+        "required": ["sample", "type", "case_id", "seq_type"]
     }
 }
