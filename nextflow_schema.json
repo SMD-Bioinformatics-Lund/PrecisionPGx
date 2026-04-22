@@ -437,18 +437,6 @@
             "description": "Specifies the sources used for annotation by PharmCAT",
             "help_text": "Specifies the sources used for annotation by PharmCAT, separated by commas. Not all genes have annotation in all sources.",
             "pattern": "^((CPIC|FDA|DPWG)?,?)*(?<!,)$"
-          },
-	  "pharmcat_complete_report": {
-            "type": "boolean",
-            "fa_icon": "fas fa-user-cog",
-            "description": "Generate complete PharmCAT reports.",
-            "help_text": "A complete report includes all genes annotated by PharmCAT and covered by the input data"
-          },
-	  "pharmcat_selected_report": {
-            "type": "boolean",
-            "fa_icon": "fas fa-user-cog",
-            "description": "Generate PharmCAT reports with selected genes",
-            "help_text": "Set the genes to include in the selected reports in the input samplesheet, column genes."
           }
         },
         "dependentRequired": {

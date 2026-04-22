@@ -35,20 +35,19 @@ include { RENAME_ALIGN_FILES as RENAME_BAI } from '../modules/local/rename_align
 // SUBWORKFLOWS
 //
 
-include { ALIGN                                              } from '../subworkflows/local/align'
-include { PREPARE_REFERENCES                                 } from '../subworkflows/local/prepare_references'
-include { QC_BAM                                             } from '../subworkflows/local/qc_bam'
-include { VARIANT_CALLING                                    } from '../subworkflows/local/variant_calling'
-include { VARIANT_FILTRATION                                 } from '../subworkflows/local/variant_filtration'
-include { VARIANT_FILTRATION as GVCF_FILTRATION              } from '../subworkflows/local/variant_filtration'
-//include { PHARMCAT_PIPELINE                                } from '../subworkflows/local/pharmcat_pipeline'
-include { PHARMCAT_VCF_PROCESSING                            } from '../subworkflows/local/pharmcat_vcf_processing'
-include { PHARMCAT_GENOTYPING_REPORTING                      } from '../subworkflows/local/pharmcat_genotyping_reporting'
-include { PHARMCAT_GENOTYPING_REPORTING as PHARMCAT_GENOTYPING_REPORTING_SELECTED    } from '../subworkflows/local/pharmcat_genotyping_reporting'
-include { TARGET_DEPTH                                       } from '../subworkflows/local/target_depth'
-include { CYP2D6_CALLING                                     } from '../subworkflows/local/cyp2d6_calling'
-//include { CNV_CALLING                                        } from '../subworkflows/local/cnv_calling'
-//include { HLA_CALLING                                        } from '../subworkflows/local/hla_calling'
+include { ALIGN                                                                     } from '../subworkflows/local/align'
+include { PREPARE_REFERENCES                                                        } from '../subworkflows/local/prepare_references'
+include { QC_BAM                                                                    } from '../subworkflows/local/qc_bam'
+include { VARIANT_CALLING                                                           } from '../subworkflows/local/variant_calling'
+include { VARIANT_FILTRATION                                                        } from '../subworkflows/local/variant_filtration'
+include { VARIANT_FILTRATION as GVCF_FILTRATION                                     } from '../subworkflows/local/variant_filtration'
+include { PHARMCAT_VCF_PROCESSING                                                   } from '../subworkflows/local/pharmcat_vcf_processing'
+include { PHARMCAT_GENOTYPING_REPORTING                                             } from '../subworkflows/local/pharmcat_genotyping_reporting'
+include { PHARMCAT_GENOTYPING_REPORTING as PHARMCAT_GENOTYPING_REPORTING_SELECTED   } from '../subworkflows/local/pharmcat_genotyping_reporting'
+include { TARGET_DEPTH                                                              } from '../subworkflows/local/target_depth'
+include { CYP2D6_CALLING                                                            } from '../subworkflows/local/cyp2d6_calling'
+//include { CNV_CALLING                                                             } from '../subworkflows/local/cnv_calling'
+//include { HLA_CALLING                                                             } from '../subworkflows/local/hla_calling'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -367,32 +366,27 @@ workflow PRECISIONPGX {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
+    ch_pharmcat.preprocessed_vcf_pass.join(
+        ch_pharmcat.preprocessed_vcf_pass_tbi,
+        failOnMismatch:true,
+        failOnDuplicate:true
+    ).set { ch_pc_input }
+
     //Generate complete report
-    if ( params.pharmcat_complete_report ){
-
-        PHARMCAT_GENOTYPING_REPORTING(
-            ch_pharmcat.preprocessed_vcf_pass.join(
-                ch_pharmcat.preprocessed_vcf_pass_tbi,
-                failOnMismatch:true,
-                failOnDuplicate:true
-            )
-        )
-        .set { ch_pharmcat_complete }
-    }
-
+    PHARMCAT_GENOTYPING_REPORTING(
+        ch_pc_input,
+        [] // This is by defualt empty because we want the complete report
+    )
+    .set { ch_pharmcat_complete }
 
     //Generate report with selected genes
-    if ( params.pharmcat_selected_report ){
-
-        PHARMCAT_GENOTYPING_REPORTING_SELECTED(
-            ch_pharmcat.preprocessed_vcf_pass.join(
-                ch_pharmcat.preprocessed_vcf_pass_tbi,
-                failOnMismatch:true,
-                failOnDuplicate:true
-            )
-        )
-        .set { ch_pharmcat_selected }
-    }
+    PHARMCAT_GENOTYPING_REPORTING_SELECTED(
+        ch_pc_input,
+        ch_pc_input.map {
+            meta, vcf, tbi -> meta.genes
+        } // Here we send the meta.genes for selected genes report
+    )
+    .set { ch_pharmcat_selected }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

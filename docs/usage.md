@@ -251,8 +251,6 @@ params {
     pharmcat_reference_fasta_index  = null
     pharmcat_reference_fasta_fai    = null
     pharmcat_reporter_sources       = 'CPIC,FDA,DPWG'
-    pharmcat_complete_report        = true
-    pharmcat_selected_report        = false
     // TODO:
 
     // MultiQC params
@@ -342,9 +340,9 @@ To generate PharmCAT reports including only a pre-defined set of genes the colum
 Example of the contents of a minimal sample sheet:
 
 ```
-sample,type,fastq_1,fastq_2,seq_type,genes
-NA12878,N,/path/to/NA12878-single1_S1_R1_001.fastq.gz,/path/to/NA12878-single1_S1_R2_001.fastq.gz,dna,
-NA12877,N,/path/to/NA12877_S3_R1_001.fastq.gz,/path/to/NA12877_S3_R2_001.fastq.gz,dna,"CYP2C9,DPYD,CYP3A4"
+sample,case_id,type,lane,fastq_1,fastq_2,seq_type,genes
+NA12878,NA12878,N,L001,/path/to/NA12878-single1_S1_R1_001.fastq.gz,/path/to/NA12878-single1_S1_R2_001.fastq.gz,dna,""
+NA12877,NA12878,N,L001,/path/to/NA12877_S3_R1_001.fastq.gz,/path/to/NA12877_S3_R2_001.fastq.gz,dna,"CYP2C9,DPYD,CYP3A4"
 ```
 
 *To-do: Add table explaining all accepted additional columns*
@@ -431,10 +429,6 @@ pharmcat_uniallelic_pos_index: /path/to/project//PrecisionPGx/assets/pharmcat_re
 #PharmCAT report options
 #Set the sources for prescription recommendations. Defaults to all three: CPIC,FDA,DPWG
 pharmcat_reporter_sources: CPIC,FDA,DPWG
-#Create a complete report, including all covered genes
-pharmcat_complete_report: true
-#Create an additional report with selected genes
-pharmcat_selected_report: true
 
 #Email
 email: user.name@domain.se
@@ -805,15 +799,11 @@ Output suffix: `*.pharmcat.preprocessed.pass.vcf`
 ### PharmCAT genotyping and reporting
 This subworkflow does pharmacogenetic genotyping and reporting using PharmCAT.
 
-The subworkflow is called either to generate reports including all genes genotyped by PharmCAT and/or to generate reports including only those genes stated in column `genes` in the samplesheet for a given sample. 
+The subworkflow is called to generate reports including all genes genotyped by PharmCAT and to generate reports including only those genes stated in column `genes` in the samplesheet for a given sample. 
 
 When called to generate a complete report the subworkflow is called as `PHARMCAT_GENOTYPING_REPORTING` and when called to generate a report including only selected genes the subworkflow is called as `PHARMCAT_GENOTYPING_REPORTING_SELECTED`.
 
-Activate and inactivate the generation of a complete or selected report with config parameters `pharmcat_complete_report` and `pharmcat_selected_report`. 
-
-`pharmcat_complete_report`: true/false 
-
-`pharmcat_selected_report`: true/false.
+Complete report is created by default and activate and inactivate the generation of a selected report is controlled by the column `genes` in the samplesheet for a given sample. 
 
 The genes that are included in the selected report are set in column `genes` in the input samplesheet.
 

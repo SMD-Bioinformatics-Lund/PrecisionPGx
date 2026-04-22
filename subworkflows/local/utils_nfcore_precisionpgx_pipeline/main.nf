@@ -85,7 +85,8 @@ workflow PIPELINE_INITIALISATION {
         }
         .combine( ch_original_input )
         .map { counts, meta, fastq1, fastq2, spring1, spring2, bam, bai ->
-            def new_meta = meta + [num_lanes:counts[meta.id]]
+            def genes_list = meta.genes ? meta.genes.split(',').collect { it.trim() }.findAll { it } : []
+            def new_meta = meta + [num_lanes:counts[meta.id], genes: genes_list]
             if (fastq1 && fastq2) {
                 new_meta += [read_group: generateReadGroupLine(fastq1, meta, params)]
                 return [new_meta + [single_end: false, data_type: "fastq_gz"], [fastq1, fastq2]]
@@ -212,8 +213,6 @@ def checkRequiredParameters(params) {
         "input",
         "outdir",
         "pharmcat_reporter_sources",
-        "pharmcat_complete_report",
-        "pharmcat_selected_report",
     ]
 
     def pharmcatParams = [

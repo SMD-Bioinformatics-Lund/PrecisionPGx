@@ -6,13 +6,16 @@ workflow PHARMCAT_GENOTYPING_REPORTING {
 
     take:
     ch_preprocessed_vcf_pass    // channel: [ val(meta), path(vcf), path(tbi) ]
+    genes                       // val(genes)
 
     main:
 
     // Pharmcat Allele Matching
     PHARMCAT_MATCHER(
         ch_preprocessed_vcf_pass,
-            [],
+        ch_preprocessed_vcf_pass.map {
+            meta, vcf, tbi -> meta.genes
+        },
         ).set { ch_pc_matches }
 
     // Pharmcat Phenotyping
