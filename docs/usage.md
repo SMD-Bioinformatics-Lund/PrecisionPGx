@@ -440,10 +440,10 @@ The input parameters can also be set with a custom profile.
 
 The main config file, `nextflow.config`, has a section `profiles` which includes the settings for container technologies (apptainer,docker etc.) and test and user profiles. To add a custom profile, add a line to this section.
 
-Example, with a profile called `lund` defined by a config file called `lund.config`:
+Example, with a profile called `smd_lund` defined by a config file called `smd_lund.config`:
 ```
 profiles {
-    lund            { includeConfig 'conf/lund.config'              }
+    smd_lund            { includeConfig 'conf/smd_lund.config'              }
 }
 ```
 

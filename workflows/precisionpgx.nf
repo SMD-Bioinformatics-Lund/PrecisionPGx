@@ -252,13 +252,13 @@ workflow PRECISIONPGX {
     .set { ch_haplotypes }
 
 
-    ch_filter_vcf_input = channel.empty().mix(
+    ch_filter_vcf_input = Channel.empty().mix(
         ch_haplotypes.sentieon_vcf,
         ch_haplotypes.gatk_vcf,
         ch_haplotypes.deepvariant_vcf
         )
     
-    ch_filter_vcf_input_tbi = channel.empty().mix(
+    ch_filter_vcf_input_tbi = Channel.empty().mix(
         ch_haplotypes.sentieon_vcf_tbi,
         ch_haplotypes.gatk_vcf_tbi,
         ch_haplotypes.deepvariant_vcf_tbi
@@ -484,16 +484,36 @@ workflow PRECISIONPGX {
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.self_sm.map{it[1]}.collect().ifEmpty([]))
 
 
+    ch_multiqc_configs_list = ch_multiqc_config
+        .mix(ch_multiqc_custom_config)
+        .collect()
+        .ifEmpty([])
+    ch_multiqc_logo_list = ch_multiqc_logo
+        .collect()
+        .ifEmpty([])
+
+    ch_multiqc_files_keyed = ch_multiqc_files
+        .collect()
+        .map { files -> ['multiqc', files] }
+    ch_multiqc_configs_keyed = ch_multiqc_configs_list
+        .map { configs -> ['multiqc', configs] }
+    ch_multiqc_logo_keyed = ch_multiqc_logo_list
+        .map { logo -> ['multiqc', logo] }
+
+    ch_multiqc_input = ch_multiqc_files_keyed
+        .join(ch_multiqc_configs_keyed)
+        .join(ch_multiqc_logo_keyed)
+        .map { _, files, configs, logo ->
+            [[id: 'multiqc'], files, configs, logo, [], []]
+        }
+
+
     MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList(),
-        [],
-        []
+        ch_multiqc_input
     )
 
-    emit:multiqc_report = MULTIQC.out.report.toList()   // channel: /path/to/multiqc_report.html
+    emit:
+    multiqc_report = MULTIQC.out.report.toList()        // channel: /path/to/multiqc_report.html
     versions       = ch_versions                        // channel: [ path(versions.yml) ]
 
 }
