@@ -25,13 +25,6 @@ include { SPRING_DECOMPRESS as SPRING_DECOMPRESS_TO_R2_FQ   } from '../modules/n
 include { SPRING_DECOMPRESS as SPRING_DECOMPRESS_TO_FQ_PAIR } from '../modules/nf-core/spring/decompress/main'
 
 //
-// MODULE: Local modules
-//
-
-include { RENAME_ALIGN_FILES as RENAME_BAM } from '../modules/local/rename_align_files'
-include { RENAME_ALIGN_FILES as RENAME_BAI } from '../modules/local/rename_align_files'
-
-//
 // SUBWORKFLOWS
 //
 
@@ -158,8 +151,6 @@ workflow PRECISIONPGX {
     ch_pc_reference_fasta_fai       = params.pharmcat_reference_fasta_fai       ? Channel.fromPath(params.pharmcat_reference_fasta_fai).map {it -> [[id:it.simpleName], it]}.collect()
                                                                                 : Channel.value([[:],[]])
 
-    ch_versions                     = ch_versions.mix(ch_references.versions)
-
 
     //
     // Input QC (ch_reads will be empty if fastq input isn't provided so FASTQC won't run if input is not fastq)
@@ -173,14 +164,11 @@ workflow PRECISIONPGX {
 
     // Just one fastq.gz.spring-file with both R1 and R2
     ch_one_fastq_gz_pair_from_spring = SPRING_DECOMPRESS_TO_FQ_PAIR(ch_input_by_sample_type.interleaved_spring, false).fastq
-    ch_versions                      = ch_versions.mix(SPRING_DECOMPRESS_TO_FQ_PAIR.out.versions.first())
 
     // Two fastq.gz.spring-files - one for R1 and one for R2
     ch_r1_fastq_gz_from_spring  = SPRING_DECOMPRESS_TO_R1_FQ(ch_input_by_sample_type.separate_spring.map{ meta, files -> [meta, files[0] ]}, true).fastq
     ch_r2_fastq_gz_from_spring  = SPRING_DECOMPRESS_TO_R2_FQ(ch_input_by_sample_type.separate_spring.map{ meta, files -> [meta, files[1] ]}, true).fastq
     ch_two_fastq_gz_from_spring = ch_r1_fastq_gz_from_spring.join(ch_r2_fastq_gz_from_spring).map{ meta, fastq_1, fastq_2 -> [meta, [fastq_1, fastq_2]]}
-    ch_versions                 = ch_versions.mix(SPRING_DECOMPRESS_TO_R1_FQ.out.versions.first())
-    ch_versions                 = ch_versions.mix(SPRING_DECOMPRESS_TO_R2_FQ.out.versions.first())
 
     ch_input_fastqs = ch_input_by_sample_type.fastq_gz.mix(ch_one_fastq_gz_pair_from_spring).mix(ch_two_fastq_gz_from_spring)
 
@@ -204,7 +192,6 @@ workflow PRECISIONPGX {
         params.samtools_sort_threads
     )
     .set { ch_mapped }
-    ch_versions   = ch_versions.mix(ALIGN.out.versions)
 
     //
     // BAM QUALITY CHECK
@@ -225,7 +212,6 @@ workflow PRECISIONPGX {
         ch_svd_mu,
         ch_svd_ud,
     )
-    ch_versions = ch_versions.mix(QC_BAM.out.versions)
 
 
     /*

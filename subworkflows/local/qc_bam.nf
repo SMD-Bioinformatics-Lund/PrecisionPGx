@@ -32,7 +32,6 @@ workflow QC_BAM {
     main:
         ch_cov      = Channel.empty()
         ch_tiddit   = Channel.empty()
-        ch_versions = Channel.empty()
 
         PICARD_COLLECTMULTIPLEMETRICS (ch_bam_bai, ch_genome_fasta, ch_genome_fai)
 
@@ -54,7 +53,6 @@ workflow QC_BAM {
 
             TIDDIT_COV (ch_bam_bai, [[],[]]).set { tiddit_cov } // 2nd pos. arg is req. only for cram input
             ch_tiddit = Channel.empty().mix(tiddit_cov.wig)
-            ch_versions = ch_versions.mix(tiddit_cov.versions.first())
 
             CHROMOGRAPH_COV([[:],[]], TIDDIT_COV.out.wig, [[:],[]], [[:],[]], [[:],[]], [[:],[]], [[:],[]])
         }
@@ -84,5 +82,4 @@ workflow QC_BAM {
         cov              = ch_cov                                    // channel: [ val(meta), path(metrics) ]
         target_depth_tsv = SAMTOOLS_DEPTH.out.tsv                    // channel: [ val(meta), path(tsv) ]
         target_pass_bed  = TARGET_PASS_REGIONS.out.pass_bed          // channel: [ val(meta), path(bed) ] 
-        versions         = ch_versions                               // channel: [ path(versions.yml) ]
 }

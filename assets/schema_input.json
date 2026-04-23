@@ -129,6 +129,6 @@
             "spring_2": ["spring_1"],
             "bam": ["bai"]
         },
-        "required": ["sample", "case_id", "type", "lane",  "seq_type", "genes"]
+        "required": ["sample", "case_id", "type", "lane",  "seq_type"]
     }
 }

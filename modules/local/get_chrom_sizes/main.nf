@@ -12,7 +12,7 @@ process GET_CHROM_SIZES {
 
     output:
     path '*.sizes'     , emit: sizes
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val('coreutils'), eval('echo \$VERSION'), emit: versions_coreutils, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,22 +21,12 @@ process GET_CHROM_SIZES {
     def VERSION = "8.31"
     """
     cut -f 1,2 $fai > ${fai}.sizes
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        coreutils: $VERSION
-    END_VERSIONS
     """
 
     stub:
     def VERSION = "8.31"
     """
     touch ${fai}.sizes
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        coreutils: $VERSION
-    END_VERSIONS
     """
 
 }

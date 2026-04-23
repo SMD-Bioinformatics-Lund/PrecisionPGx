@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/SMD-Bioinformatics-Lund/PrecisionPGx/master/nextflow_schema.json",
     "title": "nf-core/PrecisionPGx pipeline parameters",
-    "description": "call and score variants from WGS/WES of rare disease patients",
+    "description": "End-to-end pharmacogenomics pipeline for alignment, QC, variant calling, and PharmCAT reporting with MultiQC summarization.",
     "type": "object",
     "$defs": {
       "input_output_options": {
@@ -19,7 +19,7 @@
             "schema": "assets/schema_input.json",
             "pattern": "^\\S+\\.(csv|tsv|json|yaml|yml)$",
             "description": "Path to the samplesheet file containing information about the samples in the experiment.",
-            "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/raredisease/usage#samplesheet-input).",
+            "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/precisionpgx/usage#samplesheet-input).",
             "fa_icon": "fas fa-file-csv"
           },
           "outdir": {

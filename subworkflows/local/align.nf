@@ -28,7 +28,6 @@ workflow ALIGN {
         ch_markdup_metrics    = Channel.empty()
         ch_sentieon_bam       = Channel.empty()
         ch_sentieon_bai       = Channel.empty()
-        ch_versions           = Channel.empty()
 
         if (!(params.skip_tools && params.skip_tools.split(',').contains('fastp'))) {
             input_fastp = ch_reads.map { meta, files -> return [meta, files, []] }
@@ -71,7 +70,6 @@ workflow ALIGN {
             ch_bwamem2_bam     = ALIGN_BWA_BWAMEM2_BWAMEME.out.marked_bam
             ch_bwamem2_bai     = ALIGN_BWA_BWAMEM2_BWAMEME.out.marked_bai
             ch_markdup_metrics = ALIGN_BWA_BWAMEM2_BWAMEME.out.metrics
-            ch_versions        = ch_versions.mix(ALIGN_BWA_BWAMEM2_BWAMEME.out.versions)
         } else if (params.aligner.equals("sentieon")) {
             ALIGN_SENTIEON (                        // Triggered when params.aligner is set as sentieon
                 ch_reads,
@@ -97,5 +95,4 @@ workflow ALIGN {
         genome_marked_bai  = ch_genome_marked_bai  // channel: [ val(meta), path(bai) ]
         genome_bam_bai     = ch_genome_bam_bai     // channel: [ val(meta), path(bam), path(bai) ]
         markdup_metrics    = ch_markdup_metrics    // channel: [ val(meta), path(txt) ]
-        versions           = ch_versions           // channel: [ path(versions.yml) ]
 }

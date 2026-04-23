@@ -26,7 +26,6 @@ workflow PREPARE_REFERENCES {
         ch_target_bed                // channel: [mandatory for WES] [ path(bed) ]
 
     main:
-        ch_versions      = Channel.empty()
         ch_tbi           = Channel.empty()
         ch_bgzip_tbi     = Channel.empty()
         ch_bwa           = Channel.empty()
@@ -80,11 +79,6 @@ workflow PREPARE_REFERENCES {
             .set { ch_bait_intervals_cat_in }
         CAT_CAT_BAIT ( ch_bait_intervals_cat_in )
 
-        // Gather versions
-        ch_versions = ch_versions.mix(BWAMEM2_INDEX_GENOME.out.versions)
-        ch_versions = ch_versions.mix(BWAMEME_INDEX_GENOME.out.versions)
-        ch_versions = ch_versions.mix(GET_CHROM_SIZES.out.versions)
-
     emit:
         genome_bwa_index        = Channel.empty().mix(ch_bwa, ch_sentieonbwa).collect()                                 // channel: [ val(meta), path(index) ]
         genome_bwamem2_index    = BWAMEM2_INDEX_GENOME.out.index.collect()                                              // channel: [ val(meta), path(index) ]
@@ -96,6 +90,5 @@ workflow PREPARE_REFERENCES {
         target_bed              = ch_target_bed_gz_tbi.collect()                                                        // channel: [ val(meta), path(bed), path(tbi) ]
         bait_intervals          = CAT_CAT_BAIT.out.file_out.map{ meta, inter -> inter}.collect().ifEmpty([[]])          // channel: [ path(intervals) ]
         target_intervals        = GATK_BILT.out.interval_list.map{ meta, inter -> inter}.collect()                      // channel: [ path(interval_list) ]
-        versions                = ch_versions                                                                           // channel: [ path(versions.yml) ]
 
 }

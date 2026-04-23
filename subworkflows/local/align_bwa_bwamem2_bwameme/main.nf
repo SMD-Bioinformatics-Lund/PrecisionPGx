@@ -1,5 +1,3 @@
-// Adapted from nf-core/raredisease
-
 //
 // Map to reference, fetch stats for each demultiplexed read pair, merge, mark duplicates, and index.
 //
@@ -29,21 +27,17 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
         val_platform     // string:  [mandatory] default: illumina
         val_sort_threads // integer: [mandatory] default: 4
     main:
-        ch_versions = Channel.empty()
 
         // Map, sort, and index
         if (params.aligner.equals("bwa")) {
             BWA ( ch_reads_input, ch_bwa_index, ch_genome_fasta, true )
             ch_align = BWA.out.bam
-            ch_versions = ch_versions.mix(BWA.out.versions.first())
         } else if (params.aligner.equals("bwameme")) {
             BWAMEME_MEM ( ch_reads_input, ch_bwameme_index, ch_genome_fasta, true, val_mbuffer_mem, val_sort_threads )
             ch_align = BWAMEME_MEM.out.bam
-            ch_versions = ch_versions.mix(BWAMEME_MEM.out.versions.first())
         } else {
             BWAMEM2_MEM ( ch_reads_input, ch_bwamem2_index, ch_genome_fasta, true )
             ch_align    = BWAMEM2_MEM.out.bam
-            ch_versions = ch_versions.mix(BWAMEM2_MEM.out.versions.first())
 
             if (params.bwa_as_fallback) {
                 ch_reads_input
@@ -58,7 +52,6 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
 
                 BWAMEM_FALLBACK ( ch_fallback.ERROR, ch_bwa_index, ch_genome_fasta, true )
                 ch_align = ch_fallback.SUCCESS.mix(BWAMEM_FALLBACK.out.bam)
-                ch_versions = ch_versions.mix(BWAMEM_FALLBACK.out.versions.first())
             }
         }
 
@@ -92,7 +85,6 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
             extract_bam_sorted_indexed = prepared_bam.join(SAMTOOLS_INDEX_EXTRACT.out.bai, failOnMismatch:true, failOnDuplicate:true)
             EXTRACT_ALIGNMENTS( extract_bam_sorted_indexed, ch_genome_fasta, [])
             prepared_bam = EXTRACT_ALIGNMENTS.out.bam
-            ch_versions = ch_versions.mix(EXTRACT_ALIGNMENTS.out.versions.first())
         }
 
         // Marking duplicates
@@ -103,5 +95,4 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
         metrics     = MARKDUPLICATES.out.metrics     // channel: [ val(meta), path(metrics) ]
         marked_bam  = MARKDUPLICATES.out.bam         // channel: [ val(meta), path(bam) ]
         marked_bai  = SAMTOOLS_INDEX_MARKDUP.out.bai // channel: [ val(meta), path(bai) ]
-        versions    = ch_versions                    // channel: [ path(versions.yml) ]
 }
