@@ -323,11 +323,15 @@ Each label has a defined resource usage in `conf/base.config`
 
 The columns that are accepted in the samplesheet are defined in the file `assets/schema_input.json`. 
 
-Required columns are: 
+Required columns are:
 
-`sample`: sample name 
+`sample`: sample name
+
+`case_id`: case identifier (samples sharing a `case_id` are processed together)
 
 `type`: T (tumour) or N (normal)
+
+`lane`: lane identifier (an integer, or a string with no whitespace)
 
 `seq_type`: dna or rna. (required by nf-core modules for hla genotyping with optitype)
 
