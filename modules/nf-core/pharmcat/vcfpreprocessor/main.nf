@@ -10,7 +10,9 @@ process PHARMCAT_VCFPREPROCESSOR {
     input:
     tuple val(meta), path(vcf_gz), path(vcf_index)
     tuple val(meta2), path(fasta)
-    tuple val(meta3), path(fai)
+    // Stage fasta indices (.fai and .gzi for bgzipped fasta) so htslib finds them
+    // next to the fasta and does not regenerate them in the source directory.
+    tuple val(meta3), path(fasta_indices)
     tuple val(meta4), path(pharmcat_positions), path(pharmcat_positions_index)
     tuple val(meta5), path(pharmcat_uniallelic_positions), path(pharmcat_uniallelic_positions_index)
 
