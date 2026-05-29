@@ -14,7 +14,7 @@
     - [Resource use config settings](#resource-use-config-settings)
 - [Run the pipeline with test data](#run-the-pipeline-with-test-data)
 - [Run the pipeline with input data](#run-the-pipeline-with-input-data)
-    - [Input sample sheet](#input-sample-sheet)
+    - [Input sample sheet](#input-samplesheet)
     - [Run the pipeline with input parameters in parameters.yaml](#run-the-pipeline-with-input-parameters-in-parametersyaml)
     - [Run the pipeline with user profile and user_profile.config](#run-the-pipeline-with-user-profile-and-user_profileconfig)
     - [Nextflow logs](#nextflow-logs)
@@ -328,7 +328,9 @@ The columns that are accepted in the samplesheet are defined in the file `assets
 
 Required columns are: 
 
-`sample`: sample name 
+`sample`: sample name (cannot be all numbers)
+
+`case_id`: case id (may be the same or different for all samples)
 
 `type`: T (tumour) or N (normal)
 
