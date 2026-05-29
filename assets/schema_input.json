@@ -129,6 +129,6 @@
             "spring_2": ["spring_1"],
             "bam": ["bai"]
         },
-        "required": ["sample", "type", "case_id"]
+        "required": ["sample", "type", "case_id", "seq_type"]
     }
 }

@@ -343,9 +343,9 @@ To generate PharmCAT reports including only a pre-defined set of genes the colum
 Example of the contents of a minimal sample sheet:
 
 ```
-sample,type,fastq_1,fastq_2,seq_type,genes
-NA12878,N,/path/to/NA12878-single1_S1_R1_001.fastq.gz,/path/to/NA12878-single1_S1_R2_001.fastq.gz,dna,
-NA12877,N,/path/to/NA12877_S3_R1_001.fastq.gz,/path/to/NA12877_S3_R2_001.fastq.gz,dna,"CYP2C9,DPYD,CYP3A4"
+sample,case_id,type,fastq_1,fastq_2,seq_type,genes
+NA12878,001,N,/path/to/NA12878-single1_S1_R1_001.fastq.gz,/path/to/NA12878-single1_S1_R2_001.fastq.gz,dna,
+NA12877,002,N,/path/to/NA12877_S3_R1_001.fastq.gz,/path/to/NA12877_S3_R2_001.fastq.gz,dna,"CYP2C9,DPYD,CYP3A4"
 ```
 
 *To-do: Add table explaining all accepted additional columns*

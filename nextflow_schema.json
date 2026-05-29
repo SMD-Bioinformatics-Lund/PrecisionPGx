@@ -315,7 +315,7 @@
             "fa_icon": "fas fa-bacon",
             "description": "Specifies which variant caller should be used to call variants/haplotypes",
             "help_text": "Specifies which variant caller should be used to call variants/haplotypes",
-            "enum": ["sentieon", "gatk4", "deepvariant", "bcbio"]
+            "enum": ["sentieon", "gatk4", "deepvariant"]
           },
           "emit_mode": {
             "type": "string",
@@ -351,12 +351,6 @@
         "fa_icon": "fas fa-user-cog",
         "description": "Options for running pharmcat annotation and reporting",
         "properties": {
-          "pharmcat": {
-            "type": "boolean",
-            "fa_icon": "fas fa-user-cog",
-            "description": "Run pharmcat annotation and reporting?",
-            "help_text": "Run pharmcat annotation and reporting?"
-          },
           "pharmcat_resource_dir": {
             "type": "string",
             "exists": true,
@@ -466,9 +460,7 @@
             "help_text": "Set the genes to include in the selected reports in the input samplesheet, column genes."
           }
         },
-        "dependentRequired": {
-          "pharmcat": ["pharmcat_resource_dir"]
-        }
+	"required": ["pharmcat_positions", "pharmcat_positions_index", "pharmcat_uniallelic_pos", "pharmcat_uniallelic_pos_index", "pharmcat_reference_fasta", "pharmcat_reference_fasta_index", "pharmcat_reference_fasta_fai"]
       },
       "institutional_config_options": {
         "title": "Institutional config options",
