@@ -228,7 +228,7 @@ def checkRequiredParameters(params) {
     // Requirements that can be modified by the user using either skip_tools or skip_subworkflows here
     def dynamicRequirements = [
         variant_calling              : ["genome"],
-        variant_annotation           : ["genome", "pharmcat"],
+        variant_annotation           : ["genome"],
     ]
 
     def missingParamsCount = 0
