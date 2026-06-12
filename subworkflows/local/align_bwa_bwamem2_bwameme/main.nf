@@ -59,7 +59,11 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
 
         // Get stats for each demultiplexed read pair.
         bam_sorted_indexed = ch_align.join(SAMTOOLS_INDEX_ALIGN.out.index, failOnMismatch:true, failOnDuplicate:true)
-        SAMTOOLS_STATS ( bam_sorted_indexed, [[],[]] )
+        SAMTOOLS_STATS (
+            bam_sorted_indexed,
+            ch_genome_fasta.combine(ch_genome_fai.map { _meta, fai -> fai })
+                           .map { meta, fasta, fai -> [meta, fasta, fai] }
+        )
 
         // Merge multiple lane samples and index
         ch_align
