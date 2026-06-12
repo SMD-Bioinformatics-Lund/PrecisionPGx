@@ -58,8 +58,12 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
         SAMTOOLS_INDEX_ALIGN ( ch_align )
 
         // Get stats for each demultiplexed read pair.
-        bam_sorted_indexed = ch_align.join(SAMTOOLS_INDEX_ALIGN.out.bai, failOnMismatch:true, failOnDuplicate:true)
-        SAMTOOLS_STATS ( bam_sorted_indexed, [[],[]] )
+        bam_sorted_indexed = ch_align.join(SAMTOOLS_INDEX_ALIGN.out.index, failOnMismatch:true, failOnDuplicate:true)
+        SAMTOOLS_STATS (
+            bam_sorted_indexed,
+            ch_genome_fasta.combine(ch_genome_fai.map { _meta, fai -> fai })
+                           .map { meta, fasta, fai -> [meta, fasta, fai] }
+        )
 
         // Merge multiple lane samples and index
         ch_align
@@ -75,14 +79,20 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
                 }
             .set{ bams }
 
-        // If there are no samples to merge, skip the process
-        SAMTOOLS_MERGE ( bams.multiple, ch_genome_fasta, ch_genome_fai, [])
+        // If there are no samples to merge, skip the process.
+        // The nf-core SAMTOOLS_MERGE module bundles (bams, indices) into one
+        // tuple and (fasta, fai, gzi) into another, so build matching shapes.
+        SAMTOOLS_MERGE (
+            bams.multiple.map { meta, bam_list -> [meta, bam_list, []] },
+            ch_genome_fasta.combine(ch_genome_fai.map { _meta, fai -> fai })
+                           .map { meta, fasta, fai -> [meta, fasta, fai, []] }
+        )
         prepared_bam = bams.single.mix(SAMTOOLS_MERGE.out.bam)
 
         // GET ALIGNMENT FROM SELECTED CONTIGS
         if (params.extract_alignments) {
             SAMTOOLS_INDEX_EXTRACT ( prepared_bam )
-            extract_bam_sorted_indexed = prepared_bam.join(SAMTOOLS_INDEX_EXTRACT.out.bai, failOnMismatch:true, failOnDuplicate:true)
+            extract_bam_sorted_indexed = prepared_bam.join(SAMTOOLS_INDEX_EXTRACT.out.index, failOnMismatch:true, failOnDuplicate:true)
             EXTRACT_ALIGNMENTS( extract_bam_sorted_indexed, ch_genome_fasta, [])
             prepared_bam = EXTRACT_ALIGNMENTS.out.bam
         }
@@ -94,5 +104,5 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
         stats       = SAMTOOLS_STATS.out.stats       // channel: [ val(meta), path(stats) ]
         metrics     = MARKDUPLICATES.out.metrics     // channel: [ val(meta), path(metrics) ]
         marked_bam  = MARKDUPLICATES.out.bam         // channel: [ val(meta), path(bam) ]
-        marked_bai  = SAMTOOLS_INDEX_MARKDUP.out.bai // channel: [ val(meta), path(bai) ]
+        marked_bai  = SAMTOOLS_INDEX_MARKDUP.out.index // channel: [ val(meta), path(bai) ]
 }
