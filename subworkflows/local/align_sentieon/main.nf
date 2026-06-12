@@ -42,7 +42,7 @@ workflow ALIGN_SENTIEON {
             EXTRACT_ALIGNMENTS( ch_bam_bai, ch_genome_fasta, [])
             ch_bam_bai = EXTRACT_ALIGNMENTS.out.bam
             SAMTOOLS_INDEX_EXTRACT ( EXTRACT_ALIGNMENTS.out.bam )
-            ch_bam_bai = EXTRACT_ALIGNMENTS.out.bam.join(SAMTOOLS_INDEX_EXTRACT.out.bai, failOnMismatch:true, failOnDuplicate:true)
+            ch_bam_bai = EXTRACT_ALIGNMENTS.out.bam.join(SAMTOOLS_INDEX_EXTRACT.out.index, failOnMismatch:true, failOnDuplicate:true)
 
         }
 

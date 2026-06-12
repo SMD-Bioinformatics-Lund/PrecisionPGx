@@ -58,7 +58,7 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
         SAMTOOLS_INDEX_ALIGN ( ch_align )
 
         // Get stats for each demultiplexed read pair.
-        bam_sorted_indexed = ch_align.join(SAMTOOLS_INDEX_ALIGN.out.bai, failOnMismatch:true, failOnDuplicate:true)
+        bam_sorted_indexed = ch_align.join(SAMTOOLS_INDEX_ALIGN.out.index, failOnMismatch:true, failOnDuplicate:true)
         SAMTOOLS_STATS ( bam_sorted_indexed, [[],[]] )
 
         // Merge multiple lane samples and index
@@ -82,7 +82,7 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
         // GET ALIGNMENT FROM SELECTED CONTIGS
         if (params.extract_alignments) {
             SAMTOOLS_INDEX_EXTRACT ( prepared_bam )
-            extract_bam_sorted_indexed = prepared_bam.join(SAMTOOLS_INDEX_EXTRACT.out.bai, failOnMismatch:true, failOnDuplicate:true)
+            extract_bam_sorted_indexed = prepared_bam.join(SAMTOOLS_INDEX_EXTRACT.out.index, failOnMismatch:true, failOnDuplicate:true)
             EXTRACT_ALIGNMENTS( extract_bam_sorted_indexed, ch_genome_fasta, [])
             prepared_bam = EXTRACT_ALIGNMENTS.out.bam
         }
@@ -94,5 +94,5 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
         stats       = SAMTOOLS_STATS.out.stats       // channel: [ val(meta), path(stats) ]
         metrics     = MARKDUPLICATES.out.metrics     // channel: [ val(meta), path(metrics) ]
         marked_bam  = MARKDUPLICATES.out.bam         // channel: [ val(meta), path(bam) ]
-        marked_bai  = SAMTOOLS_INDEX_MARKDUP.out.bai // channel: [ val(meta), path(bai) ]
+        marked_bai  = SAMTOOLS_INDEX_MARKDUP.out.index // channel: [ val(meta), path(bai) ]
 }
