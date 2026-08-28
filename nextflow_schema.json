@@ -1,8 +1,8 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/SMD-Bioinformatics-Lund/PrecisionPGx/master/nextflow_schema.json",
-    "title": "SMD-Bioinformatics-Lund/PrecisionPGx pipeline parameters",
-    "description": "call and score variants from WGS/WES of rare disease patients",
+    "title": "nf-core/PrecisionPGx pipeline parameters",
+    "description": "End-to-end pharmacogenomics pipeline for alignment, QC, variant calling, and PharmCAT reporting with MultiQC summarization.",
     "type": "object",
     "$defs": {
       "input_output_options": {
@@ -19,7 +19,7 @@
             "schema": "assets/schema_input.json",
             "pattern": "^\\S+\\.(csv|tsv|json|yaml|yml)$",
             "description": "Path to the samplesheet file containing information about the samples in the experiment.",
-            "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/raredisease/usage#samplesheet-input).",
+            "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/precisionpgx/usage#samplesheet-input).",
             "fa_icon": "fas fa-file-csv"
           },
           "outdir": {
@@ -377,15 +377,6 @@
             "description": "Path to pharmcat positions vcf file.",
             "help_text": "Positions used by PharmCAT."
           },
-	  "pharmcat_positions_no_chr": {
-            "type": "string",
-            "exists": true,
-            "format": "path",
-            "fa_icon": "fas fa-file",
-            "pattern": "^\\S+\\.vcf(\\.gz)?$",
-            "description": "Path to pharmcat positions vcf file where chr are annotated without chr.",
-            "help_text": "Positions used by PharmCAT."
-          },
           "pharmcat_positions_index": {
             "type": "string",
             "exists": true,
@@ -409,7 +400,7 @@
             "exists": true,
             "format": "path",
             "fa_icon": "fas fa-file",
-            "pattern": "^\\S+\\.csi$",
+            "pattern": "^\\S+\\.(tbi|csi)$",
             "description": "Path to index of uniallelic pharmcat positions vcf file.",
             "help_text": "Index of uniallelic positions used by PharmCAT."
           },
@@ -446,18 +437,6 @@
             "description": "Specifies the sources used for annotation by PharmCAT",
             "help_text": "Specifies the sources used for annotation by PharmCAT, separated by commas. Not all genes have annotation in all sources.",
             "pattern": "^((CPIC|FDA|DPWG)?,?)*(?<!,)$"
-          },
-	  "pharmcat_complete_report": {
-            "type": "boolean",
-            "fa_icon": "fas fa-user-cog",
-            "description": "Generate complete PharmCAT reports.",
-            "help_text": "A complete report includes all genes annotated by PharmCAT and covered by the input data"
-          },
-	  "pharmcat_selected_report": {
-            "type": "boolean",
-            "fa_icon": "fas fa-user-cog",
-            "description": "Generate PharmCAT reports with selected genes",
-            "help_text": "Set the genes to include in the selected reports in the input samplesheet, column genes."
           }
         },
 	"required": ["pharmcat_positions", "pharmcat_positions_index", "pharmcat_uniallelic_pos", "pharmcat_uniallelic_pos_index", "pharmcat_reference_fasta", "pharmcat_reference_fasta_index", "pharmcat_reference_fasta_fai"]

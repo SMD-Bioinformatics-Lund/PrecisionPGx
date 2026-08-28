@@ -25,30 +25,22 @@ include { SPRING_DECOMPRESS as SPRING_DECOMPRESS_TO_R2_FQ   } from '../modules/n
 include { SPRING_DECOMPRESS as SPRING_DECOMPRESS_TO_FQ_PAIR } from '../modules/nf-core/spring/decompress/main'
 
 //
-// MODULE: Local modules
-//
-
-include { RENAME_ALIGN_FILES as RENAME_BAM } from '../modules/local/rename_align_files'
-include { RENAME_ALIGN_FILES as RENAME_BAI } from '../modules/local/rename_align_files'
-
-//
 // SUBWORKFLOWS
 //
 
-include { ALIGN                                              } from '../subworkflows/local/align'
-include { PREPARE_REFERENCES                                 } from '../subworkflows/local/prepare_references'
-include { QC_BAM                                             } from '../subworkflows/local/qc_bam'
-include { VARIANT_CALLING                                    } from '../subworkflows/local/variant_calling'
-include { VARIANT_FILTRATION                                 } from '../subworkflows/local/variant_filtration'
-include { VARIANT_FILTRATION as GVCF_FILTRATION              } from '../subworkflows/local/variant_filtration'
-//include { PHARMCAT_PIPELINE                                } from '../subworkflows/local/pharmcat_pipeline'
-include { PHARMCAT_VCF_PROCESSING                            } from '../subworkflows/local/pharmcat_vcf_processing'
-include { PHARMCAT_GENOTYPING_REPORTING                      } from '../subworkflows/local/pharmcat_genotyping_reporting'
-include { PHARMCAT_GENOTYPING_REPORTING as PHARMCAT_GENOTYPING_REPORTING_SELECTED    } from '../subworkflows/local/pharmcat_genotyping_reporting'
-include { TARGET_DEPTH                                       } from '../subworkflows/local/target_depth'
-include { CYP2D6_CALLING                                     } from '../subworkflows/local/cyp2d6_calling'
-//include { CNV_CALLING                                        } from '../subworkflows/local/cnv_calling'
-//include { HLA_CALLING                                        } from '../subworkflows/local/hla_calling'
+include { ALIGN                                                                     } from '../subworkflows/local/align'
+include { PREPARE_REFERENCES                                                        } from '../subworkflows/local/prepare_references'
+include { QC_BAM                                                                    } from '../subworkflows/local/qc_bam'
+include { VARIANT_CALLING                                                           } from '../subworkflows/local/variant_calling'
+include { VARIANT_FILTRATION                                                        } from '../subworkflows/local/variant_filtration'
+include { VARIANT_FILTRATION as GVCF_FILTRATION                                     } from '../subworkflows/local/variant_filtration'
+include { PHARMCAT_VCF_PROCESSING                                                   } from '../subworkflows/local/pharmcat_vcf_processing'
+include { PHARMCAT_GENOTYPING_REPORTING                                             } from '../subworkflows/local/pharmcat_genotyping_reporting'
+include { PHARMCAT_GENOTYPING_REPORTING as PHARMCAT_GENOTYPING_REPORTING_SELECTED   } from '../subworkflows/local/pharmcat_genotyping_reporting'
+include { TARGET_DEPTH                                                              } from '../subworkflows/local/target_depth'
+include { CYP2D6_CALLING                                                            } from '../subworkflows/local/cyp2d6_calling'
+//include { CNV_CALLING                                                             } from '../subworkflows/local/cnv_calling'
+//include { HLA_CALLING                                                             } from '../subworkflows/local/hla_calling'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -114,6 +106,7 @@ workflow PRECISIONPGX {
     ch_bait_intervals               = ch_references.bait_intervals
     ch_target_bed                   = ch_references.target_bed
     ch_target_intervals             = ch_references.target_intervals
+    ch_target_bed_uncompressed      = ch_references.target_bed_uncompressed
     ch_call_interval                = params.call_interval                      ? Channel.fromPath(params.call_interval).map {it -> [[id:it.simpleName], it]}.collect()
                                                                                 : Channel.value([[:],[]])
     ch_genome_bwaindex              = params.bwa                                ? Channel.fromPath(params.bwa).map {it -> [[id:it.simpleName], it]}.collect()
@@ -158,8 +151,6 @@ workflow PRECISIONPGX {
     ch_pc_reference_fasta_fai       = params.pharmcat_reference_fasta_fai       ? Channel.fromPath(params.pharmcat_reference_fasta_fai).map {it -> [[id:it.simpleName], it]}.collect()
                                                                                 : Channel.value([[:],[]])
 
-    ch_versions                     = ch_versions.mix(ch_references.versions)
-
 
     //
     // Input QC (ch_reads will be empty if fastq input isn't provided so FASTQC won't run if input is not fastq)
@@ -173,14 +164,11 @@ workflow PRECISIONPGX {
 
     // Just one fastq.gz.spring-file with both R1 and R2
     ch_one_fastq_gz_pair_from_spring = SPRING_DECOMPRESS_TO_FQ_PAIR(ch_input_by_sample_type.interleaved_spring, false).fastq
-    ch_versions                      = ch_versions.mix(SPRING_DECOMPRESS_TO_FQ_PAIR.out.versions.first())
 
     // Two fastq.gz.spring-files - one for R1 and one for R2
     ch_r1_fastq_gz_from_spring  = SPRING_DECOMPRESS_TO_R1_FQ(ch_input_by_sample_type.separate_spring.map{ meta, files -> [meta, files[0] ]}, true).fastq
     ch_r2_fastq_gz_from_spring  = SPRING_DECOMPRESS_TO_R2_FQ(ch_input_by_sample_type.separate_spring.map{ meta, files -> [meta, files[1] ]}, true).fastq
     ch_two_fastq_gz_from_spring = ch_r1_fastq_gz_from_spring.join(ch_r2_fastq_gz_from_spring).map{ meta, fastq_1, fastq_2 -> [meta, [fastq_1, fastq_2]]}
-    ch_versions                 = ch_versions.mix(SPRING_DECOMPRESS_TO_R1_FQ.out.versions.first())
-    ch_versions                 = ch_versions.mix(SPRING_DECOMPRESS_TO_R2_FQ.out.versions.first())
 
     ch_input_fastqs = ch_input_by_sample_type.fastq_gz.mix(ch_one_fastq_gz_pair_from_spring).mix(ch_two_fastq_gz_from_spring)
 
@@ -204,18 +192,19 @@ workflow PRECISIONPGX {
         params.samtools_sort_threads
     )
     .set { ch_mapped }
-    ch_versions   = ch_versions.mix(ALIGN.out.versions)
 
     //
     // BAM QUALITY CHECK
     //
     QC_BAM (
-        ch_mapped.genome_marked_bam,
-        ch_mapped.genome_marked_bai,
         ch_mapped.genome_bam_bai,
         ch_genome_fasta,
         ch_genome_fai,
         ch_genome_dictionary,
+        ch_target_bed.map {
+            meta, bed_path, bed_tbi -> [ meta, bed_path ]
+        },
+        ch_target_bed_uncompressed,
         ch_bait_intervals,
         ch_target_intervals,
         ch_intervals_wgs,
@@ -223,7 +212,6 @@ workflow PRECISIONPGX {
         ch_svd_mu,
         ch_svd_ud,
     )
-    ch_versions = ch_versions.mix(QC_BAM.out.versions)
 
 
     /*
@@ -250,13 +238,13 @@ workflow PRECISIONPGX {
     .set { ch_haplotypes }
 
 
-    ch_filter_vcf_input = channel.empty().mix(
+    ch_filter_vcf_input = Channel.empty().mix(
         ch_haplotypes.sentieon_vcf,
         ch_haplotypes.gatk_vcf,
         ch_haplotypes.deepvariant_vcf
         )
     
-    ch_filter_vcf_input_tbi = channel.empty().mix(
+    ch_filter_vcf_input_tbi = Channel.empty().mix(
         ch_haplotypes.sentieon_vcf_tbi,
         ch_haplotypes.gatk_vcf_tbi,
         ch_haplotypes.deepvariant_vcf_tbi
@@ -292,23 +280,6 @@ workflow PRECISIONPGX {
     )
     .set { ch_filtered_haplotypes }
 
-    /*
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        TARGET DEPTH
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    */
-    // TARGET DEPTHS
-    // output ch_targetdepths include target_depth_tsv   // channel: [ val(meta), path(tsv) ], target_pass_bed   // channel: [ val(meta), path(bed) ] 
-
-    TARGET_DEPTH (
-        ch_mapped.genome_bam_bai,
-        ch_target_bed.map {
-            meta, bed_path, bed_tbi -> [ meta, bed_path ]
-        }
-    )
-    .set { ch_targetdepths }
-
-
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -317,10 +288,10 @@ workflow PRECISIONPGX {
     */
 
     if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('cnv_calling'))){
-        // Input ch_targetdepths.target_depth_tsv
+        // Input QC_BAM.out.target_depth_tsv
         /*
         CNV_CALLING (
-            ch_targetdepths.target_depth_tsv
+            QC_BAM.out.target_depth_tsv
         )
         .set { ch_cnvcalls }
         */
@@ -371,7 +342,7 @@ workflow PRECISIONPGX {
             failOnMismatch:true, 
             failOnDuplicate:true
         ),
-        ch_targetdepths.target_pass_bed
+        QC_BAM.out.target_pass_bed
     )
     .set { ch_pharmcat }
 
@@ -381,32 +352,27 @@ workflow PRECISIONPGX {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
+    ch_pharmcat.preprocessed_vcf_pass.join(
+        ch_pharmcat.preprocessed_vcf_pass_tbi,
+        failOnMismatch:true,
+        failOnDuplicate:true
+    ).set { ch_pc_input }
+
     //Generate complete report
-    if ( params.pharmcat_complete_report ){
-
-        PHARMCAT_GENOTYPING_REPORTING(
-            ch_pharmcat.preprocessed_vcf_pass.join(
-                ch_pharmcat.preprocessed_vcf_pass_tbi,
-                failOnMismatch:true,
-                failOnDuplicate:true
-            )
-        )
-        .set { ch_pharmcat_complete }
-    }
-
+    PHARMCAT_GENOTYPING_REPORTING(
+        ch_pc_input,
+        [] // This is by defualt empty because we want the complete report
+    )
+    .set { ch_pharmcat_complete }
 
     //Generate report with selected genes
-    if ( params.pharmcat_selected_report ){
-
-        PHARMCAT_GENOTYPING_REPORTING_SELECTED(
-            ch_pharmcat.preprocessed_vcf_pass.join(
-                ch_pharmcat.preprocessed_vcf_pass_tbi,
-                failOnMismatch:true,
-                failOnDuplicate:true
-            )
-        )
-        .set { ch_pharmcat_selected }
-    }
+    PHARMCAT_GENOTYPING_REPORTING_SELECTED(
+        ch_pc_input,
+        ch_pc_input.map {
+            meta, vcf, tbi -> meta.genes
+        } // Here we send the meta.genes for selected genes report
+    )
+    .set { ch_pharmcat_selected }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -499,22 +465,41 @@ workflow PRECISIONPGX {
     ch_multiqc_files = ch_multiqc_files.mix(ALIGN.out.markdup_metrics.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.multiple_metrics.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.hs_metrics.map{it[1]}.collect().ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.qualimap_results.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.global_dist.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.cov.map{it[1]}.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QC_BAM.out.self_sm.map{it[1]}.collect().ifEmpty([]))
 
 
+    ch_multiqc_configs_list = ch_multiqc_config
+        .mix(ch_multiqc_custom_config)
+        .collect()
+        .ifEmpty([])
+    ch_multiqc_logo_list = ch_multiqc_logo
+        .collect()
+        .ifEmpty([])
+
+    ch_multiqc_files_keyed = ch_multiqc_files
+        .collect()
+        .map { files -> ['multiqc', files] }
+    ch_multiqc_configs_keyed = ch_multiqc_configs_list
+        .map { configs -> ['multiqc', configs] }
+    ch_multiqc_logo_keyed = ch_multiqc_logo_list
+        .map { logo -> ['multiqc', logo] }
+
+    ch_multiqc_input = ch_multiqc_files_keyed
+        .join(ch_multiqc_configs_keyed)
+        .join(ch_multiqc_logo_keyed)
+        .map { _, files, configs, logo ->
+            [[id: 'multiqc'], files, configs, logo, [], []]
+        }
+
+
     MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList(),
-        [],
-        []
+        ch_multiqc_input
     )
 
-    emit:multiqc_report = MULTIQC.out.report.toList()   // channel: /path/to/multiqc_report.html
+    emit:
+    multiqc_report = MULTIQC.out.report.toList()        // channel: /path/to/multiqc_report.html
     versions       = ch_versions                        // channel: [ path(versions.yml) ]
 
 }

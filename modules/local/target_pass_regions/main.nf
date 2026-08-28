@@ -12,7 +12,7 @@ process TARGET_PASS_REGIONS {
 
     output:
     tuple val(meta), path("*.pass.bed"), emit: pass_bed
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val('coreutils'), eval('echo \$VERSION'), emit: versions_coreutils, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,11 +22,6 @@ process TARGET_PASS_REGIONS {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     awk '{if (\$3 >= ${params.min_dp}) print \$1 "\t" \$2-1 "\t" \$2 "\t" \$3 }' ${tsv} > ${prefix}.target.pass.bed  
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        coreutils: $VERSION
-    END_VERSIONS
     """
 
     stub:
@@ -34,10 +29,5 @@ process TARGET_PASS_REGIONS {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.target.pass.bed
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        coreutils: $VERSION
-    END_VERSIONS
     """
 }

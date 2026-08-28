@@ -1,9 +1,6 @@
 include { SENTIEON_HAPLOTYPER                       } from '../../modules/nf-core/sentieon/haplotyper'
 include { GATK4_HAPLOTYPECALLER                     } from '../../modules/nf-core/gatk4/haplotypecaller'
 include { DEEPVARIANT_RUNDEEPVARIANT                } from '../../modules/nf-core/deepvariant/rundeepvariant'
-//include { TABIX_BGZIPTABIX                          } from '../../modules/nf-core/tabix/bgziptabix'
-
-//include { AGGREGATE_VCFS                            } from '../../modules/local/aggregate_vcfs/main'
 
 
 
@@ -63,7 +60,6 @@ workflow VARIANT_CALLING {
             [[],[]],
         )
 
-
         // DEEP VARIANT
         // Provide the target bed to DEEPVARIANT
         bam_bai_ch.combine(ch_target_bed.map { meta, target_bed -> return target_bed}).set {ch_targeted_variant_calls_input}
@@ -79,19 +75,6 @@ workflow VARIANT_CALLING {
             [[],[]],
             [[],[]],
         )
-
-        // Aggregate all callers to one VCF
-        // ch_vcf = Channel.empty().mix(
-        //         ch_sentieon_vcf.decomposed_normalized_vcfs, 
-        //         ch_gatk_vcf.decomposed_normalized_vcfs, 
-        //         ch_freebayes_vcf.decomposed_normalized_vcfs, 
-        //         ch_bcftools_vcf.decomposed_normalized_vcfs
-        //     ).groupTuple(by: [0,1])
-
-        // AGGREGATE_VCFS ( ch_vcf )
-        // ch_versions = ch_versions.mix(AGGREGATE_VCFS.out.versions)
-
-
 
     emit:
         sentieon_vcf                            = ch_sentieon_vcf                           // channel: [ val(meta), path(vcf) ]

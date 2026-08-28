@@ -11,7 +11,6 @@
 include { UTILS_NFSCHEMA_PLUGIN     } from '../../nf-core/utils_nfschema_plugin'
 include { paramsSummaryMap          } from 'plugin/nf-schema'
 include { samplesheetToList         } from 'plugin/nf-schema'
-include { paramsHelp                } from 'plugin/nf-schema'
 include { completionEmail           } from '../../nf-core/utils_nfcore_pipeline'
 include { completionSummary         } from '../../nf-core/utils_nfcore_pipeline'
 include { imNotification            } from '../../nf-core/utils_nfcore_pipeline'
@@ -28,11 +27,14 @@ workflow PIPELINE_INITIALISATION {
 
     take:
     version           // boolean: Display version and exit
-    validate_params   // boolean: Validate parameters against schema at runtime
-    monochrome_logs   // boolean: Disable ANSI colours
-    nextflow_cli_args //   array: Positional nextflow CLI args
-    outdir            //  string: Output directory
+    validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
+    monochrome_logs   // boolean: Do not use coloured log outputs
+    nextflow_cli_args //   array: List of positional nextflow CLI args
+    outdir            //  string: The output directory where the results will be saved
     input             //  string: Path to input samplesheet
+    help              // boolean: Display help message and exit
+    help_full         // boolean: Show the full help message
+    show_hidden       // boolean: Show hidden parameters in the help message
 
     main:
 
@@ -46,18 +48,41 @@ workflow PIPELINE_INITIALISATION {
         workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1
     )
 
+
+    //
+    // Validate parameters and generate parameter summary to stdout
+    //
+    before_text = """
+-\033[2m----------------------------------------------------\033[0m-
+                                        \033[0;32m,--.\033[0;30m/\033[0;32m,-.\033[0m
+\033[0;34m        ___     __   __   __   ___     \033[0;32m/,-._.--~\'\033[0m
+\033[0;34m  |\\ | |__  __ /  ` /  \\ |__) |__         \033[0;33m}  {\033[0m
+\033[0;34m  | \\| |       \\__, \\__/ |  \\ |___     \033[0;32m\\`-._,-`-,\033[0m
+                                        \033[0;32m`._,._,\'\033[0m
+\033[0;35m  nf-core/precisionpgx ${workflow.manifest.version}\033[0m
+-\033[2m----------------------------------------------------\033[0m-
+"""
+    after_text = """${workflow.manifest.doi ? "\n* The pipeline\n" : ""}${workflow.manifest.doi.tokenize(",").collect { doi -> "    https://doi.org/${doi.trim().replace('https://doi.org/','')}"}.join("\n")}${workflow.manifest.doi ? "\n" : ""}
+* The nf-core framework
+    https://doi.org/10.1038/s41587-020-0439-x
+
+* Software dependencies
+    https://github.com/SMD-Bioinformatics-Lund/PrecisionPGx/blob/master/CITATIONS.md
+"""
+    command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --input samplesheet.csv --outdir <OUTDIR>"
+
     
     // Validate parameters against schema at runtime
     UTILS_NFSCHEMA_PLUGIN(
         workflow,
         validate_params,
         null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
+        help,
+        help_full,
+        show_hidden,
+        before_text,
+        after_text,
+        command
     )
 
     //
@@ -85,7 +110,8 @@ workflow PIPELINE_INITIALISATION {
         }
         .combine( ch_original_input )
         .map { counts, meta, fastq1, fastq2, spring1, spring2, bam, bai ->
-            def new_meta = meta + [num_lanes:counts[meta.id]]
+            def genes_list = meta.genes ? meta.genes.split(',').collect { it.trim() }.findAll { it } : []
+            def new_meta = meta + [num_lanes:counts[meta.id], genes: genes_list]
             if (fastq1 && fastq2) {
                 new_meta += [read_group: generateReadGroupLine(fastq1, meta, params)]
                 return [new_meta + [single_end: false, data_type: "fastq_gz"], [fastq1, fastq2]]
@@ -130,12 +156,6 @@ workflow PIPELINE_INITIALISATION {
                     }.unique()
 
 
-
-    //
-    // Validate PharmCAT inputs (resource dir / build / optional bed)
-    //
-    validatePharmcatParams()
-
     emit:
     reads     = ch_samplesheet_by_type.fastq
     align     = ch_samplesheet_by_type.align
@@ -160,7 +180,7 @@ workflow PIPELINE_COMPLETION {
     multiqc_report  // path: multiqc report
 
     main:
-    summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = paramsSummaryMap(workflow, parameters_schema:  "nextflow_schema.json")
     def multiqc_reports = multiqc_report.toList()
 
     // Send completion email and summary
@@ -217,7 +237,21 @@ def checkRequiredParameters(params) {
         "fasta",
         "input",
         "outdir",
+        "pharmcat_reporter_sources",
     ]
+
+    def pharmcatParams = [
+        "pharmcat_resource_dir",
+        "pharmcat_positions",
+        "pharmcat_positions_index",
+        "pharmcat_uniallelic_pos",
+        "pharmcat_uniallelic_pos_index",
+        "pharmcat_reference_fasta",
+        "pharmcat_reference_fasta_index",
+        "pharmcat_reference_fasta_fai",
+    ]
+
+    mandatoryParams += pharmcatParams
 
     // Static requirements that are not influenced by user-defined skips
     def staticRequirements   = [
@@ -255,24 +289,16 @@ def checkRequiredParameters(params) {
         }
     }
 
+    pharmcatParams.unique().each { param ->
+        def p = file(params[param])
+        if (!p.exists()) error "PharmCAT resource file does not exist: ${params[param]}"
+    }
+
     if (missingParamsCount > 0) {
         error("\nSet missing parameters and restart the run. For more information please check usage documentation on github.")
     }
 }
 
-def validatePharmcatParams() {
-    // PharmCAT resource dir (depends on your execution model)
-    if (params.pharmcat_resource_dir) {
-        def p = file(params.pharmcat_resource_dir)
-        if (!p.exists()) error "PharmCAT resource dir does not exist: ${params.pharmcat_resource_dir}"
-    }
-
-    // pharmcat bed/intervals for calling (panel PGx)
-    if (params.pharmcat_positions_vcf) {
-        def v = file(params.pharmcat_positions_vcf)
-        if (!v.exists()) error "Pharmcat positions vcf file does not exist: ${params.pharmcat_positions_vcf}"
-    }
-}
 
 //
 // Validate channels from input samplesheet
@@ -319,12 +345,12 @@ def genomeExistsError() {
 //
 def toolCitationText() {
 
-    def align_text                  = []
-    def variant_annotation_text   = []
-    def haplotype_calls_text        = []
-    def qc_bam_text                 = []
-    def preprocessing_text          = []
-    def other_citation_text         = []
+    def align_text                      = []
+    def haplotype_calls_text            = []
+    def qc_bam_text                     = []
+    def pharmcat_text                   = []
+    def preprocessing_text              = []
+    def other_citation_text             = []
 
     align_text = [
         params.aligner.equals("bwa")      ? "BWA (Li, 2013),"                        :"",
@@ -334,55 +360,49 @@ def toolCitationText() {
         params.aligner.equals("sentieon") ? "Sentieon Tools (Freed et al., 2017),"   : ""
     ]
 
-    // TODO:
-    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('variant_annotation'))) {
-        variant_annotation_text = [
-            "CADD (Rentzsch et al., 2019, 2021),",
-            "Vcfanno (Pedersen et al., 2016),",
-            "VEP (McLaren et al., 2016),",
-            "Genmod (Magnusson et al., 2018),"
-        ]
-    }
-
-    // TODO:
     if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('variant_calling'))) {
         haplotype_calls_text = [
-            params.variant_caller.equals('gatk4') ? "GATK (McKenna et al., 2010),"      : "",
+            params.variant_caller.equals('gatk4')       ? "GATK (McKenna et al., 2010),"            : "",
             params.variant_caller.equals('sentieon')    ? "Sentieon DNAscope (Freed et al., 2022)," : "",
+            params.variant_caller.equals('deepvariant') ? "DeepVariant (Poplin et al., 2018),"      : "",
         ]
     }
 
-    // TODO:
     qc_bam_text = [
         "Picard (Broad Institute, 2023)",
-        "Qualimap (Okonechnikov et al., 2016),",
-        "TIDDIT (Eisfeldt et al., 2017),",
-        "UCSC Bigwig and Bigbed (Kent et al., 2010),",
         (params.verifybamid_svd_bed && params.verifybamid_svd_mu && params.verifybamid_svd_ud) ? "VerifyBamID2 (Zhang et al., 2020)," : "",
-        "Mosdepth (Pedersen & Quinlan, 2018),"
+        "Mosdepth (Pedersen & Quinlan, 2018),",
+        "SAMtools (Li et al., 2009),",
+        params.analysis_type.equals('panel')   ? "" :   "Sentieon Tools (Freed et al., 2017),",
+        params.analysis_type.equals('panel')   ? "" :   "TIDDIT (Eisfeldt et al., 2017),",
+        params.analysis_type.equals('panel')   ? "" :   "UCSC Bigwig and Bigbed (Kent et al., 2010),",
     ]
 
-    // TODO: Seqtk
+    pharmcat_text = [
+        "PharmCAT (Sangkuhl et al., 2020)",
+        "PharmCAT (Klein et al., 2018)",
+    ]
+
     preprocessing_text = [
         "FastQC (Andrews 2010),",
-        (params.skip_tools && params.skip_tools.split(',').contains('seqtk')) ? "" : "Fastp (Chen, 2023),"
+        (params.skip_tools && params.skip_tools.split(',').contains('fastp')) ? "" : "Fastp (Chen, 2023),"
     ]
 
-    // TODO:
     other_citation_text = [
         "BCFtools (Danecek et al., 2021),",
         "BEDTools (Quinlan & Hall, 2010),",
         "GATK (McKenna et al., 2010),",
-        "MultiQC (Ewels et al. 2016),",
+        "MultiQC (Ewels et al., 2016),",
         "SAMtools (Li et al., 2009),",
         "Tabix (Li, 2011)",
+        "Nextflow (Tommaso et al., 2017)",
         "."
     ]
 
     def concat_text = align_text +
-                        variant_annotation_text   +
                         haplotype_calls_text        +
                         qc_bam_text                 +
+                        pharmcat_text               +
                         preprocessing_text          +
                         other_citation_text
 
@@ -393,9 +413,9 @@ def toolCitationText() {
 def toolBibliographyText() {
 
     def align_text                  = []
-    def variant_annotation_text   = []
     def haplotype_calls_text        = []
     def qc_bam_text                 = []
+    def pharmcat_text               = []
     def preprocessing_text          = []
     def other_citation_text         = []
 
@@ -407,51 +427,47 @@ def toolBibliographyText() {
         params.aligner.equals("sentieon") ? "<li>Freed, D., Aldana, R., Weber, J. A., & Edwards, J. S. (2017). The Sentieon Genomics Tools—A fast and accurate solution to variant calling from next-generation sequence data (p. 115717). bioRxiv. https://doi.org/10.1101/115717</li>" : ""
     ]
 
-    // TODO:
-    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('variant_annotation'))) {
-        variant_annotation_text = [
-            "<li>Rentzsch, P., Schubach, M., Shendure, J., & Kircher, M. (2021). CADD-Splice—Improving genome-wide variant effect prediction using deep learning-derived splice scores. Genome Medicine, 13(1), 31. https://doi.org/10.1186/s13073-021-00835-9</li>",
-            "<li>Rentzsch, P., Witten, D., Cooper, G. M., Shendure, J., & Kircher, M. (2019). CADD: Predicting the deleteriousness of variants throughout the human genome. Nucleic Acids Research, 47(D1), D886–D894. https://doi.org/10.1093/nar/gky1016</li>",
-            "<li>Pedersen, B. S., Layer, R. M., & Quinlan, A. R. (2016). Vcfanno: Fast, flexible annotation of genetic variants. Genome Biology, 17(1), 118. https://doi.org/10.1186/s13059-016-0973-5</li>",
-            "<li>McLaren, W., Gil, L., Hunt, S. E., Riat, H. S., Ritchie, G. R. S., Thormann, A., Flicek, P., & Cunningham, F. (2016). The Ensembl Variant Effect Predictor. Genome Biology, 17(1), 122. https://doi.org/10.1186/s13059-016-0974-4</li>",
-            "<li>Magnusson, M., Hughes, T., Glabilloy, & Bitdeli Chef. (2018). genmod: Version 3.7.3 (3.7.3) [Computer software]. Zenodo. https://doi.org/10.5281/ZENODO.3841142</li>"
-        ]
-    }
-    // TODO:
     if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('variant_calling'))) {
         haplotype_calls_text = [
             params.variant_caller.equals('gatk4') ? "<li>Poplin, R., Chang, P.-C., Alexander, D., Schwartz, S., Colthurst, T., Ku, A., Newburger, D., Dijamco, J., Nguyen, N., Afshar, P. T., Gross, S. S., Dorfman, L., McLean, C. Y., & DePristo, M. A. (2018). A universal SNP and small-indel variant caller using deep neural networks. Nature Biotechnology, 36(10), 983–987. https://doi.org/10.1038/nbt.4235</li>" : "",
-            params.variant_caller.equals('sentieon') ? "<li>Freed, D., Pan, R., Chen, H., Li, Z., Hu, J., & Aldana, R. (2022). DNAscope: High accuracy small variant calling using machine learning [Preprint]. Bioinformatics. https://doi.org/10.1101/2022.05.20.492556</li>" : ""
+            params.variant_caller.equals('sentieon') ? "<li>Freed, D., Pan, R., Chen, H., Li, Z., Hu, J., & Aldana, R. (2022). DNAscope: High accuracy small variant calling using machine learning [Preprint]. Bioinformatics. https://doi.org/10.1101/2022.05.20.492556</li>" : "",
+            params.variant_caller.equals('deepvariant') ? "<li>Poplin, R., Chang, P. C., Alexander, D., Schwartz, S., Colthurst, T., Ku, A., ... & DePristo, M. A. (2018). A universal SNP and small-indel variant caller using deep neural networks. Nature biotechnology, 36(10), 983-987.</li>" : ""
         ]
     }
 
     qc_bam_text = [
         "<li>Broad Institute. (2023). Picard Tools. In Broad Institute, GitHub repository. http://broadinstitute.github.io/picard/</li>",
-        "<li>Okonechnikov, K., Conesa, A., & García-Alcalde, F. (2016). Qualimap 2: Advanced multi-sample quality control for high-throughput sequencing data. Bioinformatics, 32(2), 292–294. https://doi.org/10.1093/bioinformatics/btv566</li>",
-        "<li>Eisfeldt, J., Vezzi, F., Olason, P., Nilsson, D., & Lindstrand, A. (2017). TIDDIT, an efficient and comprehensive structural variant caller for massive parallel sequencing data. F1000Research, 6, 664. https://doi.org/10.12688/f1000research.11168.2</li>",
-        "<li>Kent, W. J., Zweig, A. S., Barber, G., Hinrichs, A. S., & Karolchik, D. (2010). BigWig and BigBed: Enabling browsing of large distributed datasets. Bioinformatics, 26(17), 2204–2207. https://doi.org/10.1093/bioinformatics/btq351</li>",
-        "<li>Pedersen, B. S., & Quinlan, A. R. (2018). Mosdepth: Quick coverage calculation for genomes and exomes. Bioinformatics, 34(5), 867–868. https://doi.org/10.1093/bioinformatics/btx699</li>"
-    ]
-    // TODO:
-    preprocessing_text = [
-        "<li>Andrews S, (2010) FastQC, URL: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/</li>",
-        (params.skip_tools && params.skip_tools.split(',').contains('seqtk')) ? "" : "<li>Chen, S. (2023). Ultrafast one-pass FASTQ data preprocessing, quality control, and deduplication using fastp. iMeta, 2(2), e107. https://doi.org/10.1002/imt2.107</li>"
+        params.analysis_type.equals('panel') ? "" : "<li>Kent, W. J., Zweig, A. S., Barber, G., Hinrichs, A. S., & Karolchik, D. (2010). BigWig and BigBed: Enabling browsing of large distributed datasets. Bioinformatics, 26(17), 2204–2207. https://doi.org/10.1093/bioinformatics/btq351</li>",
+        "<li>Pedersen, B. S., & Quinlan, A. R. (2018). Mosdepth: Quick coverage calculation for genomes and exomes. Bioinformatics, 34(5), 867–868. https://doi.org/10.1093/bioinformatics/btx699</li>",
+        "<li>Li, H., Handsaker, B., Wysoker, A., Fennell, T., Ruan, J., Homer, N., Marth, G., Abecasis, G., Durbin, R., & 1000 Genome Project Data Processing Subgroup. (2009). The Sequence Alignment/Map format and SAMtools. Bioinformatics, 25(16), 2078–2079. https://doi.org/10.1093/bioinformatics/btp352</li>",
+        params.analysis_type.equals('panel') ? "" : "<li>Eisfeldt, J., Vezzi, F., Olason, P., Nilsson, D., & Lindstrand, A. (2017). TIDDIT, an efficient and comprehensive structural variant caller for massive parallel sequencing data. F1000Research, 6, 664. https://doi.org/10.12688/f1000research.11168.2</li>",
+        params.analysis_type.equals('panel') ? "" : "<li>Freed, D., Aldana, R., Weber, J. A., & Edwards, J. S. (2017). The Sentieon Genomics Tools–A fast and accurate solution to variant calling from next-generation sequence data. BioRxiv, 115717.</li>",
     ]
 
-    // TODO:
+    pharmcat_text = [
+        "Sangkuhl, K., Whirl‐Carrillo, M., Whaley, R. M., Woon, M., Lavertu, A., Altman, R. B., ... & Klein, T. E. (2020). Pharmacogenomics clinical annotation tool (Pharm CAT). Clinical Pharmacology & Therapeutics, 107(1), 203-210.",
+        "Klein, T. E., & Ritchie, M. D. (2018). PharmCAT: a pharmacogenomics clinical annotation tool. Clinical Pharmacology & Therapeutics, 104(1), 19-22."
+    ]
+
+    preprocessing_text = [
+        "<li>Andrews S, (2010) FastQC, URL: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/</li>",
+        (params.skip_tools && params.skip_tools.split(',').contains('fastp')) ? "" : "<li>Chen, S. (2023). Ultrafast one-pass FASTQ data preprocessing, quality control, and deduplication using fastp. iMeta, 2(2), e107. https://doi.org/10.1002/imt2.107</li>"
+    ]
+
     other_citation_text = [
         "<li>Danecek, P., Bonfield, J. K., Liddle, J., Marshall, J., Ohan, V., Pollard, M. O., Whitwham, A., Keane, T., McCarthy, S. A., Davies, R. M., & Li, H. (2021). Twelve years of SAMtools and BCFtools. GigaScience, 10(2), giab008. https://doi.org/10.1093/gigascience/giab008</li>",
         "<li>McKenna, A., Hanna, M., Banks, E., Sivachenko, A., Cibulskis, K., Kernytsky, A., Garimella, K., Altshuler, D., Gabriel, S., Daly, M., & DePristo, M. A. (2010). The Genome Analysis Toolkit: A MapReduce framework for analyzing next-generation DNA sequencing data. Genome Research, 20(9), 1297–1303. https://doi.org/10.1101/gr.107524.110</li>",
         "<li>Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: Summarize analysis results for multiple tools and samples in a single report. Bioinformatics, 32(19), 3047–3048. https://doi.org/10.1093/bioinformatics/btw354</li>",
         "<li>Li, H., Handsaker, B., Wysoker, A., Fennell, T., Ruan, J., Homer, N., Marth, G., Abecasis, G., Durbin, R., & 1000 Genome Project Data Processing Subgroup. (2009). The Sequence Alignment/Map format and SAMtools. Bioinformatics, 25(16), 2078–2079. https://doi.org/10.1093/bioinformatics/btp352</li>",
         "<li>Li, H. (2011). Tabix: Fast retrieval of sequence features from generic TAB-delimited files. Bioinformatics, 27(5), 718–719. https://doi.org/10.1093/bioinformatics/btq671</li>",
-        "<li>Quinlan, AR., Hall IM. (2010). BEDTools: a flexible suite of utilities for comparing genomic features. Bioinfomatics, 26(6), 841-842. https://doi.org/10.1093/bioinformatics/btq033</li>"
+        "<li>Quinlan, AR., Hall IM. (2010). BEDTools: a flexible suite of utilities for comparing genomic features. Bioinfomatics, 26(6), 841-842. https://doi.org/10.1093/bioinformatics/btq033</li>",
+        "Di Tommaso, P., Chatzou, M., Floden, E. W., Barja, P. P., Palumbo, E., & Notredame, C. (2017). Nextflow enables reproducible computational workflows. Nature biotechnology, 35(4), 316-319."
     ]
 
     def concat_text = align_text +
-                        variant_annotation_text   +
                         haplotype_calls_text        +
                         qc_bam_text                 +
+                        pharmcat_text               +
                         preprocessing_text          +
                         other_citation_text
 

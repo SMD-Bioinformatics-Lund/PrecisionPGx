@@ -1,17 +1,10 @@
 {
-    "name": "SMD-Bioinformatics-Lund/precisionpgx",
+    "name": "nf-core/precisionpgx",
     "homePage": "https://github.com/SMD-Bioinformatics-Lund/precisionpgx",
     "repos": {
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
-                    "bcftools/call": {
-                        "branch": "master",
-                        "git_sha": "6383d8fe58f9498eecd5aa303e71a4a932d1e9f6",
-                        "installed_by": [
-                            "modules"
-                        ]
-                    },
                     "bcftools/filter": {
                         "branch": "master",
                         "git_sha": "6383d8fe58f9498eecd5aa303e71a4a932d1e9f6",
@@ -56,35 +49,35 @@
                     },
                     "bwa/mem": {
                         "branch": "master",
-                        "git_sha": "966ba9887e2b04d89d64db06c01508873bde13b1",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "bwamem2/index": {
                         "branch": "master",
-                        "git_sha": "051e7c60dbdcc5d96ce7814c31426ce776f5319b",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "bwamem2/mem": {
                         "branch": "master",
-                        "git_sha": "d86336f3e7ae0d5f76c67b0859409769cfeb2af2",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "bwameme/index": {
                         "branch": "master",
-                        "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "bwameme/mem": {
                         "branch": "master",
-                        "git_sha": "051e7c60dbdcc5d96ce7814c31426ce776f5319b",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": [
                             "modules"
                         ]
@@ -154,35 +147,35 @@
                     },
                     "multiqc": {
                         "branch": "master",
-                        "git_sha": "575e1a4b51a9bad7a8cd1316a88fb85684ef7c7b",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "pharmcat/matcher": {
                         "branch": "master",
-                        "git_sha": "96398d76ad719f9b57f27ff39c09834b7815461b",
+                        "git_sha": "b14f0e970a439c814771f7af37810c941a896455",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "pharmcat/phenotyper": {
                         "branch": "master",
-                        "git_sha": "a189b3283019d52ade6ac8f45c46896e2f5b6d53",
+                        "git_sha": "b14f0e970a439c814771f7af37810c941a896455",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "pharmcat/reporter": {
                         "branch": "master",
-                        "git_sha": "c75d052c96718451c865f9524d2254110129d4b9",
+                        "git_sha": "b14f0e970a439c814771f7af37810c941a896455",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "pharmcat/vcfpreprocessor": {
                         "branch": "master",
-                        "git_sha": "f10c9a56efdabe1736e5ef977b921b05f1b2ac01",
+                        "git_sha": "5d4a8ab3aeed5b759ca0a38b57b6153e9b55deab",
                         "installed_by": [
                             "modules"
                         ]
@@ -215,51 +208,44 @@
                             "modules"
                         ]
                     },
-                    "qualimap/bamqc": {
+                    "samtools/depth": {
                         "branch": "master",
-                        "git_sha": "e753770db613ce014b3c4bc94f6cba443427b726",
-                        "installed_by": [
-                            "modules"
-                        ]
-                    },
-                    "samtools/dict": {
-                        "branch": "master",
-                        "git_sha": "9a48bce39a67e2cb34b8f125fc1d50f0ad98b616",
+                        "git_sha": "156feda0cb6589cd29c04902004fa3b53bc00205",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "samtools/faidx": {
                         "branch": "master",
-                        "git_sha": "9a48bce39a67e2cb34b8f125fc1d50f0ad98b616",
+                        "git_sha": "156feda0cb6589cd29c04902004fa3b53bc00205",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "samtools/index": {
                         "branch": "master",
-                        "git_sha": "1d2fbdcbca677bbe8da0f9d0d2bb7c02f2cab1c9",
+                        "git_sha": "156feda0cb6589cd29c04902004fa3b53bc00205",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "samtools/merge": {
                         "branch": "master",
-                        "git_sha": "9a48bce39a67e2cb34b8f125fc1d50f0ad98b616",
+                        "git_sha": "156feda0cb6589cd29c04902004fa3b53bc00205",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "samtools/stats": {
                         "branch": "master",
-                        "git_sha": "fe93fde0845f907fc91ad7cc7d797930408824df",
+                        "git_sha": "156feda0cb6589cd29c04902004fa3b53bc00205",
                         "installed_by": [
                             "modules"
                         ]
                     },
                     "samtools/view": {
                         "branch": "master",
-                        "git_sha": "d2ceed2ec5fccf922638f116a15e02f6458288fb",
+                        "git_sha": "2057a0a8dbd67000d08613a556570aa7184a7c89",
                         "installed_by": [
                             "modules"
                         ]
@@ -313,16 +299,9 @@
                             "modules"
                         ]
                     },
-                    "seqtk/sample": {
-                        "branch": "master",
-                        "git_sha": "a46713779030a5f508117080cbf4b693dd4c6e33",
-                        "installed_by": [
-                            "modules"
-                        ]
-                    },
                     "spring/decompress": {
                         "branch": "master",
-                        "git_sha": "e753770db613ce014b3c4bc94f6cba443427b726",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": [
                             "modules"
                         ]
@@ -343,7 +322,7 @@
                     },
                     "tiddit/cov": {
                         "branch": "master",
-                        "git_sha": "f5667101797c3cd51c9dd2913261527897954ab6",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": [
                             "modules"
                         ]
