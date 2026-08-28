@@ -26,16 +26,32 @@ workflow PHARMCAT_VCF_PROCESSING {
     // VCF indexing
     TABIX_TABIX(ch_preprocessed_vcf.preprocessed_vcf).set { ch_preprocessed_vcf_tbi }
 
-    // Filter VCF to only include sites with depth > input min_dp
-    BCFTOOLS_VIEW ( 
-            ch_preprocessed_vcf.preprocessed_vcf.join(
-                ch_preprocessed_vcf_tbi.index,
-                failOnMismatch:true, 
-                failOnDuplicate:true
-            ),
-            ch_target_pass_bed.map { meta, pass_bed_path -> [ pass_bed_path ] },
+    // Filter VCF to only include sites with depth > input min_dp.
+    //
+    // The VCF+tbi tuple and the per-sample target-pass BED come from
+    // different upstream subworkflows (PHARMCAT_VCFPREPROCESSOR vs QC_BAM)
+    // and carry meta dicts that share `id` but differ in other fields. A
+    // `.join` on the full meta therefore fails to match (issue #27). Join on
+    // `meta.id` only, then `multiMap` back into the two channels BCFTOOLS_VIEW
+    // expects (VCF tuple + plain BED path).
+    ch_preprocessed_vcf.preprocessed_vcf
+        .join(ch_preprocessed_vcf_tbi.index, failOnMismatch: true, failOnDuplicate: true)
+        .map { meta, vcf, tbi -> [meta.id, meta, vcf, tbi] }
+        .join(
+            ch_target_pass_bed.map { meta, bed -> [meta.id, bed] },
+            failOnMismatch: true, failOnDuplicate: true
+        )
+        .multiMap { _id, meta, vcf, tbi, bed ->
+            vcf_tbi:  [meta, vcf, tbi]
+            pass_bed: bed
+        }
+        .set { ch_view_input }
+
+    BCFTOOLS_VIEW (
+            ch_view_input.vcf_tbi,
+            ch_view_input.pass_bed,
             [],
-            [] 
+            []
         ).set { ch_preprocessed_vcf_pass }
 
     emit:

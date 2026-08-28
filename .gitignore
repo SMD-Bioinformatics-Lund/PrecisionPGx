@@ -9,3 +9,4 @@ testing*
 *.pyc
 null/
 *backup
+test_data/
