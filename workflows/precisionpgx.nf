@@ -146,10 +146,12 @@ workflow PRECISIONPGX {
 
     ch_pc_reference_fasta           = params.pharmcat_reference_fasta           ? Channel.fromPath(params.pharmcat_reference_fasta).map {it -> [[id:it.simpleName], it]}.collect()
                                                                                 : Channel.value([[:],[]])
-    ch_pc_reference_fasta_index     = params.pharmcat_reference_fasta_index     ? Channel.fromPath(params.pharmcat_reference_fasta_index).map {it -> [[id:it.simpleName], it]}.collect()
-                                                                                : Channel.value([[:],[]])
-    ch_pc_reference_fasta_fai       = params.pharmcat_reference_fasta_fai       ? Channel.fromPath(params.pharmcat_reference_fasta_fai).map {it -> [[id:it.simpleName], it]}.collect()
-                                                                                : Channel.value([[:],[]])
+    // Stage .fai and .gzi together so the VCF preprocessor finds both next to the
+    // bgzipped fasta and does not regenerate them (causes races under parallelism, #26).
+    ch_pc_reference_fasta_indices   = (params.pharmcat_reference_fasta_fai && params.pharmcat_reference_fasta_index)
+                                        ? Channel.fromPath([params.pharmcat_reference_fasta_fai, params.pharmcat_reference_fasta_index]).collect()
+                                            .map { files -> [[id: 'pharmcat_reference'], files] }
+                                        : Channel.value([[:],[]])
 
 
     //
@@ -329,9 +331,9 @@ workflow PRECISIONPGX {
     ).set { ch_pharmcat_input_joined }
 
     PHARMCAT_VCF_PROCESSING(
-        ch_pharmcat_input_joined, 
-        ch_pc_reference_fasta, 
-        ch_pc_reference_fasta_fai, 
+        ch_pharmcat_input_joined,
+        ch_pc_reference_fasta,
+        ch_pc_reference_fasta_indices,
         ch_pc_positions_vcf.join(
             ch_pc_positions_vcf_index, 
             failOnMismatch:true, 

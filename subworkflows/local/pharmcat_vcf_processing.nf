@@ -7,7 +7,7 @@ workflow PHARMCAT_VCF_PROCESSING {
     take:
     ch_vcf                      // channel: [ val(meta), [ vcf ], [ tbi ] ]
     ch_ref_fasta                // channel: [ val(meta), path(fasta) ]
-    ch_ref_fasta_index          // channel: [ val(meta), path(fasta_index) ]
+    ch_ref_fasta_indices        // channel: [ val(meta), [ path(fai), path(gzi) ] ]
     ch_pc_pos                   // channel: [ val(meta), path(pharmcat_positions_vcf), path(pharmcat_positions_vcf_index) ]
     ch_pc_uniallelic_pos        // channel: [ val(meta), path(pharmcat_uniallelic_pos_vcf), path(pharmcat_uniallelic_pos_vcf_index) ]
     ch_target_pass_bed          // channel: [ val(meta), path(target_pass_bed) ]
@@ -16,26 +16,33 @@ workflow PHARMCAT_VCF_PROCESSING {
 
     // VCF Preprocessing
     PHARMCAT_VCFPREPROCESSOR(
-        ch_vcf, 
-        ch_ref_fasta, 
-        ch_ref_fasta_index, 
-        ch_pc_pos.first(), 
+        ch_vcf,
+        ch_ref_fasta,
+        ch_ref_fasta_indices,
+        ch_pc_pos.first(),
         ch_pc_uniallelic_pos.first()
-        ).set { ch_preprocessed_vcf } 
+        ).set { ch_preprocessed_vcf }
 
     // VCF indexing
     TABIX_TABIX(ch_preprocessed_vcf.preprocessed_vcf).set { ch_preprocessed_vcf_tbi }
 
-    // Filter VCF to only include sites with depth > input min_dp
-    BCFTOOLS_VIEW ( 
-            ch_preprocessed_vcf.preprocessed_vcf.join(
-                ch_preprocessed_vcf_tbi.index,
-                failOnMismatch:true, 
-                failOnDuplicate:true
-            ),
-            ch_target_pass_bed.map { meta, pass_bed_path -> [ pass_bed_path ] },
+    // Filter VCF to only include sites with depth > input min_dp.
+    // Join VCF, index and target-pass BED on meta so each sample's BED stays paired
+    // with its own VCF; then split into the two channels BCFTOOLS_VIEW expects.
+    ch_preprocessed_vcf.preprocessed_vcf
+        .join(ch_preprocessed_vcf_tbi.index, failOnMismatch: true, failOnDuplicate: true)
+        .join(ch_target_pass_bed,            failOnMismatch: true, failOnDuplicate: true)
+        .multiMap { meta, vcf, tbi, pass_bed ->
+            vcf_tbi:  [ meta, vcf, tbi ]
+            pass_bed: pass_bed
+        }
+        .set { ch_view_input }
+
+    BCFTOOLS_VIEW (
+            ch_view_input.vcf_tbi,
+            ch_view_input.pass_bed,
             [],
-            [] 
+            []
         ).set { ch_preprocessed_vcf_pass }
 
     emit:
