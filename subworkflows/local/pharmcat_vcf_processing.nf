@@ -15,28 +15,39 @@ workflow PHARMCAT_VCF_PROCESSING {
     main:
 
     // VCF Preprocessing
-    PHARMCAT_VCFPREPROCESSOR(
+    ch_preprocessed_vcf = PHARMCAT_VCFPREPROCESSOR(
         ch_vcf, 
         ch_ref_fasta, 
         ch_ref_fasta_index, 
         ch_pc_pos.first(), 
         ch_pc_uniallelic_pos.first()
-        ).set { ch_preprocessed_vcf } 
+        )
+        //.set { ch_preprocessed_vcf } 
 
     // VCF indexing
-    TABIX_TABIX(ch_preprocessed_vcf.preprocessed_vcf).set { ch_preprocessed_vcf_tbi }
+    ch_preprocessed_vcf_tbi = TABIX_TABIX(ch_preprocessed_vcf.preprocessed_vcf)
+        //.set { ch_preprocessed_vcf_tbi }
+
+    ch_view_input = ch_preprocessed_vcf.preprocessed_vcf
+        .join(ch_preprocessed_vcf_tbi.index, failOnMismatch: true, failOnDuplicate: true)
+        .map { meta, vcf, tbi -> [meta.id, meta, vcf, tbi] }
+        .join(
+            ch_target_pass_bed.map { meta, bed -> [meta.id, bed] },
+            failOnMismatch: true, failOnDuplicate: true
+        )
+        .multiMap { _id, meta, vcf, tbi, bed ->
+            vcf_tbi:  [meta, vcf, tbi]
+            pass_bed: bed
+        }
 
     // Filter VCF to only include sites with depth > input min_dp
-    BCFTOOLS_VIEW ( 
-            ch_preprocessed_vcf.preprocessed_vcf.join(
-                ch_preprocessed_vcf_tbi.index,
-                failOnMismatch:true, 
-                failOnDuplicate:true
-            ),
-            ch_target_pass_bed.map { meta, pass_bed_path -> [ pass_bed_path ] },
+    ch_preprocessed_vcf_pass = BCFTOOLS_VIEW (
+            ch_view_input.vcf_tbi,
+            ch_view_input.pass_bed,
             [],
-            [] 
-        ).set { ch_preprocessed_vcf_pass }
+            []
+        )
+        //.set { ch_preprocessed_vcf_pass }
 
     emit:
     preprocessed_vcf    = ch_preprocessed_vcf.preprocessed_vcf    // channel: [ val(meta), [ preprocessed.vcf.bgz ] ]
