@@ -13,9 +13,7 @@ workflow PHARMCAT_GENOTYPING_REPORTING {
     // Pharmcat Allele Matching
     PHARMCAT_MATCHER(
         ch_preprocessed_vcf_pass,
-        ch_preprocessed_vcf_pass.map {
-            meta, vcf, tbi -> meta.genes
-        },
+        genes
         ).set { ch_pc_matches }
 
     // Pharmcat Phenotyping

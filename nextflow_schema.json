@@ -437,9 +437,21 @@
             "description": "Specifies the sources used for annotation by PharmCAT",
             "help_text": "Specifies the sources used for annotation by PharmCAT, separated by commas. Not all genes have annotation in all sources.",
             "pattern": "^((CPIC|FDA|DPWG)?,?)*(?<!,)$"
-          }
-        },
-	"required": ["pharmcat_positions", "pharmcat_positions_index", "pharmcat_uniallelic_pos", "pharmcat_uniallelic_pos_index", "pharmcat_reference_fasta", "pharmcat_reference_fasta_index", "pharmcat_reference_fasta_fai"]
+          },
+	  "pharmcat_complete_report": {
+            "type": "boolean",
+	    "fa_icon": "fas fa-toggle-on",
+            "description": "Specifies whether a complete PharmCAT report including all targeted genes will be generated.",
+            "help_text": "Specifies whether a complete PharmCAT report including all targeted genes will be generated."
+          },
+	  "pharmcat_selected_report": {
+            "type": "boolean",
+            "fa_icon": "fas fa-toggle-on",
+            "description": "Specifies whether a PharmCAT report including selected genes will be generated.",
+            "help_text": "Genes included in the column genes in the samplesheet will be included."
+          },
+	},
+	"required": ["pharmcat_positions", "pharmcat_positions_index", "pharmcat_uniallelic_pos", "pharmcat_uniallelic_pos_index", "pharmcat_reference_fasta", "pharmcat_reference_fasta_index", "pharmcat_reference_fasta_fai", "pharmcat_complete_report", "pharmcat_selected_report"]
       },
       "institutional_config_options": {
         "title": "Institutional config options",

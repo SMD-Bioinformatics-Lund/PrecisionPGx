@@ -359,20 +359,24 @@ workflow PRECISIONPGX {
     ).set { ch_pc_input }
 
     //Generate complete report
-    PHARMCAT_GENOTYPING_REPORTING(
-        ch_pc_input,
-        [] // This is by defualt empty because we want the complete report
-    )
-    .set { ch_pharmcat_complete }
+    if ( params.pharmcat_complete_report ){    
+        PHARMCAT_GENOTYPING_REPORTING(
+            ch_pc_input,
+            [] // Genes section set to empty because we want the complete report
+        )
+        .set { ch_pharmcat_complete }
+    }
 
     //Generate report with selected genes
-    PHARMCAT_GENOTYPING_REPORTING_SELECTED(
-        ch_pc_input,
-        ch_pc_input.map {
-            meta, vcf, tbi -> meta.genes
-        } // Here we send the meta.genes for selected genes report
-    )
-    .set { ch_pharmcat_selected }
+    if ( params.pharmcat_selected_report ){
+        PHARMCAT_GENOTYPING_REPORTING_SELECTED(
+            ch_pc_input,
+            ch_pc_input.map {
+                meta, vcf, tbi -> meta.genes
+            } // Genes section set to the meta.genes for the selected genes report
+        )
+        .set { ch_pharmcat_selected }
+    }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
