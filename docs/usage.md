@@ -44,9 +44,9 @@
         - [Output folder](#output-folder-3)
     - [Target depth](#target-depth)
         - [Output folder](#output-folder-4)
-    - [CNV calling](#cnv_calling)
+    - [CNV calling](#cnv-calling)
         - [Output folder](#output-folder-5)
-    - [HLA calling](#hla_calling)
+    - [HLA calling](#hla-calling)
         - [Output folder](#output-folder-6)
     - [PharmCAT VCF processing](#pharmcat-vcf-processing)
         - [Create PharmCAT formatted VCF](#create-pharmcat-formatted-vcf)
@@ -60,7 +60,7 @@
             - [Output folder](#output-folder-10)
         - [PharmCAT reporter](#pharmcat-reporter)
             - [Output folder](#output-folder-11)
-    - [CYP2D6 calling](#cyp2d6_calling)
+    - [CYP2D6 calling](#cyp2d6-calling)
         - [Output folder](#output-folder-12)
     - [Collect software versions and multiqc](#collect-software-versions-and-multiqc)
         - [MultiQC](#multiqc)
@@ -233,7 +233,8 @@ params {
     verifybamid_svd_ud              = null
 
     // CNV Calling
-    // TODO:
+    use_cohort_cn_means             = true
+    cn_means                        = null 
 
     // HLA Calling
     // TODO:
@@ -331,6 +332,8 @@ Required columns are:
 
 `type`: T (tumour) or N (normal)
 
+`lane`: Lane must be an integer or a string that cannot contain spaces
+
 `seq_type`: dna or rna. (required by nf-core modules for hla genotyping with optitype)
 
 For analysis based on FASTQ files `fastq_1` and `fastq_2` must be provided. 
@@ -339,12 +342,14 @@ For analysis based on BAM files `bam`: path to BAM file, and `bai`: path to inde
 
 To generate PharmCAT reports including only a pre-defined set of genes the column `genes` must be provided. `genes` should be a comma-separated list of gene names within citation marks, e.g. `"CYP2C9,CYP2C19,TPMT"`. The samples in the samplesheet can all have different values in the column `genes`.
 
+To define the genes for which CNV reports are generated, the column `cnv_genes` must be provided. `genes` should be a comma-separated list of gene names within citation marks, e.g. `"TPMT,SLCO1B1"`. The samples in the samplesheet can all have different values in the column `cnv_genes`.
+
 Example of the contents of a minimal sample sheet:
 
 ```
-sample,case_id,type,lane,fastq_1,fastq_2,seq_type,genes
-NA12878,NA12878,N,L001,/path/to/NA12878-single1_S1_R1_001.fastq.gz,/path/to/NA12878-single1_S1_R2_001.fastq.gz,dna,""
-NA12877,NA12878,N,L001,/path/to/NA12877_S3_R1_001.fastq.gz,/path/to/NA12877_S3_R2_001.fastq.gz,dna,"CYP2C9,DPYD,CYP3A4"
+sample,case_id,type,lane,fastq_1,fastq_2,seq_type,genes,cnv_genes
+NA12878,NA12878,N,L001,/path/to/NA12878-single1_S1_R1_001.fastq.gz,/path/to/NA12878-single1_S1_R2_001.fastq.gz,dna,"","SLCO1B1"
+NA12877,NA12878,N,L001,/path/to/NA12877_S3_R1_001.fastq.gz,/path/to/NA12877_S3_R2_001.fastq.gz,dna,"CYP2C9,DPYD,CYP3A4","DPYD,SLCO1B1"
 ```
 
 *To-do: Add table explaining all accepted additional columns*
@@ -431,6 +436,16 @@ pharmcat_uniallelic_pos_index: /path/to/project//PrecisionPGx/assets/pharmcat_re
 #PharmCAT report options
 #Set the sources for prescription recommendations. Defaults to all three: CPIC,FDA,DPWG
 pharmcat_reporter_sources: CPIC,FDA,DPWG
+#Create a complete report, including all covered genes
+pharmcat_complete_report: true
+#Create an additional report with selected genes
+pharmcat_selected_report: true
+
+#CNV parameters
+#Calculate cn means from cohort
+use_cohort_cn_means: true
+#Path to pre-calculated copy number means
+cn_means:
 
 #Email
 email: user.name@domain.se
@@ -752,10 +767,42 @@ Expected read depths can be provided with the config parameters or calculated fr
 
 Skip this subworkflow by adding "cnv_calling" to the config parameter `skip_subworkflows`.
 
-*In progress. Add/test other additional CNV detection tools?* 
+#### Calculations
+Read depths in every position of the panel are normalized by division with the total read depth of the sample. 
+
+The proportional read depth is compared with the mean proportional read depth in the corresponding position, either calculated from the analyzed cohort or from a panel of normals, and copy number is calculated based on the difference between the two.
+
+For every position a measure of variation, Z-score, is calculated based on the standard deviation of the proportional read depths of the cohort or panel of normals.
+
+parameter ```use_cohort_means = true/false```
+
+Set to true to calculate cohort mean values and use these for calculations. Set to false and provide path to pre-calculated means with parameter ```cn_means = /path/to/file```.
+
+If cohort mean values are calculated, these are saved to output directory `cnv/cohort_means`
+
+Read depth, proportional read depth, copy number and z-score are calculated for all samples in all positions in the target bed file.
+
+Resulting files are saved to output directory `cnv/data`
+
+#### Reporting
+Although data is calculated, and saved, for all samples and all positions, figures and text reports are only created for the genes given in the column cnv_genes in the samplesheet.
+
+Two figures and one text report are created for each reported gene:
+- One figure with panels for variant allele frequency, read depth, copy number and z-score for all positions in the gene. Positions where both copy number and z-score are above given thresholds are highlighted in red.
+- One figure with mean values for all annotated exons in the gene (annotated in the given target bed file). For CYP2D6 and CYP2D7, exons where the copy number deviates more than 25% from the copy number of CYP2D8 are highlighted in red.
+- A text file with calculated mean copy numbers of all exons in the gene.
+
+Resulting sample files are saved to output directory `cnv/reports`
+
+#### Workflow logic
+If the cnv_calling subworkflow is activated (i.e. not included in the skip_subworkflows parameter) copy numbers are calculated for the complete panel and reports and figures will be generated for the genes included in the cnv_genes column in the samplesheet.
+
+If the cyp2d6_calling subworkflow is activated (i.e. not included in the skip_subworkflows parameter) copy numbers are calculated for the complete panel and copy number reports will be generated for CYP2D6, since proper CYP2D6 genotyping cannot be done without determining copy number and presence of hybrid genes.
+
+If both cyp2d6_calling and cnv_calling are included in the skip_subworkflows parameter, no copy number calculations are made.
 
 #### Output folder
-`cnv_calls`
+`cnv`
 
 ### HLA calling
 This subworkflow calls HLA genotypes with [optitype](https://github.com/FRED-2/Optitype).

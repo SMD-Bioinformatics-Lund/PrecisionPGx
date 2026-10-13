@@ -343,7 +343,24 @@
         "type": "object",
         "fa_icon": "fas fa-user-cog",
         "description": "Options used to call CNVs.",
-        "properties": {}
+        "properties": {
+          "use_cohort_cn_means": {
+            "type": "boolean",
+            "exists": true,
+            "format": "directory-path",
+            "description": "Set to true to use analysis cohort for copy number calculations.",
+            "help_text": "Use analysis cohort for copy number calculations.",
+            "fa_icon": "fas fa-toggle-on"
+          },
+          "cn_means": {
+            "type": "string",
+            "exists": true,
+            "format": "path",
+            "description": "Path to previously calculated mean proportional depths, to be used for copy number calculations.",
+            "help_text": "Path to file generated with setting use_cohort_cn_means: true",
+            "fa_icon": "fas fa-file"
+          }
+        }
       },
       "pharmcat_annotation": {
         "title": "Pharmcat annotation options",
