@@ -103,7 +103,15 @@
                 "type": "string",
                 "pattern": "^\\S+$",
                 "meta": ["genes"],
-                "errorMessage": "Comma-separated list of genes to be analysed and reported. Cannot contain spaces"
+		"default": "CYP2B6,CYP2C9,CYP2C19,CYP3A4,CYP3A5",
+                "errorMessage": "Comma-separated list of genes to be included in a separate PharmCAT report. Cannot contain spaces"
+            },
+                "cnv_genes": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "meta": ["cnv_genes"],
+		"default": "CYP2B6,SLCO1B1,DPYD",
+                "errorMessage": "Comma-separated list of genes for which CNV-reports will be generated. Cannot contain spaces"
             }
         },
         "uniqueEntries": ["case_id", "sample"],

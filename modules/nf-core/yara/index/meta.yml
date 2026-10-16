@@ -1,0 +1,65 @@
+name: yara_index
+description: Builds a YARA index for a reference genome
+keywords:
+  - build
+  - index
+  - fasta
+  - genome
+  - reference
+tools:
+  - yara:
+      description: Yara is an exact tool for aligning DNA sequencing reads to
+        reference genomes.
+      homepage: https://github.com/seqan/seqan
+      documentation: https://github.com/seqan/seqan
+      tool_dev_url: https://github.com/seqan/seqan
+      licence:
+        - "https://raw.githubusercontent.com/seqan/seqan/develop/apps/yara/LICENSE"
+      identifier: biotools:yara
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. [ id:'test', single_end:false ]
+    - fasta:
+        type: file
+        description: Input genome fasta file
+        ontologies: []
+output:
+  index:
+    - - meta:
+          type: file
+          description: YARA genome index files
+          pattern: "yara.*"
+          ontologies: []
+      - ${fasta}*:
+          type: file
+          description: YARA genome index files
+          pattern: "yara.*"
+          ontologies: []
+  versions_yara:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - yara:
+          type: string
+          description: The name of the tool
+      - "yara_indexer --version 2>&1 | grep 'yara_indexer version' | sed 's/^.*yara_indexer version: //; s/ .*\\$//'":
+          type: eval
+          description: The expression to obtain the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The name of the process
+      - yara:
+          type: string
+          description: The name of the tool
+      - "yara_indexer --version 2>&1 | grep 'yara_indexer version' | sed 's/^.*yara_indexer version: //; s/ .*\\$//'":
+          type: eval
+          description: The expression to obtain the version of the tool
+authors:
+  - "@apeltzer"
+maintainers:
+  - "@apeltzer"
