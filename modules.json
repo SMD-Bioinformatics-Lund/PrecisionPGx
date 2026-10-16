@@ -152,6 +152,13 @@
                             "modules"
                         ]
                     },
+                    "optitype": {
+                        "branch": "master",
+                        "git_sha": "7557e3468d1a55fe8c21500fd5c7b469560d89aa",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
                     "pharmcat/matcher": {
                         "branch": "master",
                         "git_sha": "b14f0e970a439c814771f7af37810c941a896455",
@@ -330,6 +337,20 @@
                     "verifybamid/verifybamid2": {
                         "branch": "master",
                         "git_sha": "2ad28db4a5a82972c1210dfa7c85f035bb80c4de",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "yara/index": {
+                        "branch": "master",
+                        "git_sha": "7ad1622c68ea87dd3a16bcc4b82cd5d5878fffd9",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "yara/mapper": {
+                        "branch": "master",
+                        "git_sha": "7ad1622c68ea87dd3a16bcc4b82cd5d5878fffd9",
                         "installed_by": [
                             "modules"
                         ]

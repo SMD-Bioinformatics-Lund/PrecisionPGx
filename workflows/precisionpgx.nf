@@ -43,10 +43,12 @@ include { VARIANT_FILTRATION as GVCF_FILTRATION                                 
 include { PHARMCAT_VCF_PROCESSING                                                   } from '../subworkflows/local/pharmcat_vcf_processing'
 include { PHARMCAT_GENOTYPING_REPORTING                                             } from '../subworkflows/local/pharmcat_genotyping_reporting'
 include { PHARMCAT_GENOTYPING_REPORTING as PHARMCAT_GENOTYPING_REPORTING_SELECTED   } from '../subworkflows/local/pharmcat_genotyping_reporting'
+include { PHARMCAT_GENOTYPING_REPORTING as PHARMCAT_GENOTYPING_REPORTING_SELECTED_WITH_OUTSIDECALL
+                                                                                    } from '../subworkflows/local/pharmcat_genotyping_reporting'
 include { TARGET_DEPTH                                                              } from '../subworkflows/local/target_depth'
 include { CYP2D6_CALLING                                                            } from '../subworkflows/local/cyp2d6_calling'
 include { CNV_CALLING                                                               } from '../subworkflows/local/cnv_calling'
-//include { HLA_CALLING                                                             } from '../subworkflows/local/hla_calling'
+include { HLA_TYPING                                                                } from '../subworkflows/local/hla_typing'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -94,6 +96,7 @@ workflow PRECISIONPGX {
                                                                 : Channel.empty()
     ch_target_bed_unprocessed    = params.target_bed          ? Channel.fromPath(params.target_bed).map{ it -> [[id:it.simpleName], it] }.collect()
                                                                 : Channel.value([[],[]])
+    hla_fasta                    = params.hla_fasta
 
     //
     // Prepare references and indices.
@@ -329,13 +332,21 @@ workflow PRECISIONPGX {
     */
 
     if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('hla_calling'))){
-        // Input ch_mapped.genome_bam_bai
-        /*
-        HLA_CALLING (
-            ch_mapped.genome_bam_bai
-        )
-        .set { ch_hlacalls }
-        */
+        // Run HLA calling from fastq
+        //take:
+        //    ch_reads_input   // channel: [mandatory] [ val(meta), path(reads) ]
+        //    ch_hla_fasta     // channel: [ val(meta), path(fasta) ]
+        HLA_TYPING (
+            ch_input_fastqs,
+            hla_fasta
+            )
+
+        hla_calls = HLA_TYPING.out.hla_calls
+
+    } else {
+
+        hla_calls = []
+
     }
 
     /*
@@ -377,27 +388,67 @@ workflow PRECISIONPGX {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-    ch_pharmcat.preprocessed_vcf_pass.join(
+    ch_pharmcat_genotyping_input = ch_pharmcat.preprocessed_vcf_pass.join(
         ch_pharmcat.preprocessed_vcf_pass_tbi,
         failOnMismatch:true,
         failOnDuplicate:true
-    ).set { ch_pc_input }
+    )
 
     //Generate complete report
+    //HLA calls are always included. If no HLA calls were made the channel hla_calls is empty.
     PHARMCAT_GENOTYPING_REPORTING(
-        ch_pc_input,
-        [] // This is by defualt empty because we want the complete report
+        ch_pharmcat_genotyping_input,
+        hla_calls,
+        [] // Genes section set to empty because we want the complete report
     )
     .set { ch_pharmcat_complete }
 
     //Generate report with selected genes
-    PHARMCAT_GENOTYPING_REPORTING_SELECTED(
-        ch_pc_input,
-        ch_pc_input.map {
-            meta, vcf, tbi -> meta.genes
-        } // Here we send the meta.genes for selected genes report
-    )
-    .set { ch_pharmcat_selected }
+    // Inclusion of HLA depends on selected genes in meta.genes
+    if ( params.pharmcat_selected_report ){
+        //If HLA calls were made, samples with and without HLA in the list of selected genes need to be separated
+        if (!( hla_calls == [] )){
+            // Branch genotyping input separating samples with and without hla included in the selected genes
+            pharmcat_report_genotyping_input_branches = ch_pharmcat_genotyping_input
+                .branch { meta, vcf, tbi ->
+                    includehla: meta.genes.contains('HLA')
+                    nohla: true
+                }
+            // Branch hla calls the same way
+            pharmcat_report_hla_branches = hla_calls
+                .branch { meta, txt ->
+                    includehla: meta.genes.contains('HLA')
+                    nohla: true
+                }
+            // Samples with HLA included in the selected genes report
+            PHARMCAT_GENOTYPING_REPORTING_SELECTED_WITH_OUTSIDECALL(
+                pharmcat_report_genotyping_input_branches.includehla,
+                pharmcat_report_hla_branches.includehla,
+                pharmcat_report_genotyping_input_branches.includehla.map {
+                    meta, vcf, tbi -> meta.genes
+                }
+            )
+            // Samples without HLA included in the selected genes report
+            PHARMCAT_GENOTYPING_REPORTING_SELECTED(
+                pharmcat_report_genotyping_input_branches.nohla,
+                [],
+                pharmcat_report_genotyping_input_branches.nohla.map {
+                    meta, vcf, tbi -> meta.genes
+                }
+            )
+        }
+        // if hla_calls is empty, all samples can be treated the same (reporting without outside calls)
+        else {
+            PHARMCAT_GENOTYPING_REPORTING_SELECTED(
+                ch_pharmcat_genotyping_input,
+                hla_calls,
+                ch_pharmcat_genotyping_input.map {
+                    meta, vcf, tbi -> meta.genes
+                }
+            )
+        }
+    }
+
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

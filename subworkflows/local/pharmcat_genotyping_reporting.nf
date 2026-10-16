@@ -6,6 +6,7 @@ workflow PHARMCAT_GENOTYPING_REPORTING {
 
     take:
     ch_preprocessed_vcf_pass    // channel: [ val(meta), path(vcf), path(tbi) ]
+    ch_hla_calls                // channel: [ val(meta), path(txt) ]
     genes                       // val(genes)
 
     main:
@@ -13,21 +14,31 @@ workflow PHARMCAT_GENOTYPING_REPORTING {
     // Pharmcat Allele Matching
     PHARMCAT_MATCHER(
         ch_preprocessed_vcf_pass,
-        ch_preprocessed_vcf_pass.map {
-            meta, vcf, tbi -> meta.genes
-        },
+        genes
         ).set { ch_pc_matches }
+    
+    // Combine pharmcat matches with outside hla calls
+    // if no hla calls are provided
+    if ( ch_hla_calls == [] ) {
+        ch_phenotyper_input = ch_pc_matches.matcher_json.map {
+            meta, matcher_json ->
+            [ meta, matcher_json, [] ]
+        }
+    }
+    // if hla calls are provided
+    else {
+        ch_phenotyper_input = ch_pc_matches.matcher_json
+            .map { meta, matcher_json -> [meta.id, meta, matcher_json] }
+            .join(
+                ch_hla_calls.map { meta, txt -> [meta.sample, txt] },
+                failOnMismatch: true, failOnDuplicate: true
+            )
+            .map { _id, meta, matcher_json, txt -> [meta, matcher_json, txt] }
+    }    
 
     // Pharmcat Phenotyping
     PHARMCAT_PHENOTYPER(
-       ch_pc_matches.matcher_json.map {
-            meta, matcher_json -> 
-            [
-                meta,
-                matcher_json,
-                []  // TODO: Outside Pheno calls, will be updated when we add CYP2D6/HLA calls
-            ]
-        }
+        ch_phenotyper_input
     ).set { ch_phenotypes }
 
     // Pharmcat Reporting
