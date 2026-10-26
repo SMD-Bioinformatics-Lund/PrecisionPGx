@@ -25,6 +25,12 @@ include { SPRING_DECOMPRESS as SPRING_DECOMPRESS_TO_R2_FQ   } from '../modules/n
 include { SPRING_DECOMPRESS as SPRING_DECOMPRESS_TO_FQ_PAIR } from '../modules/nf-core/spring/decompress/main'
 
 //
+// MODULE: Local modules
+//
+
+include { COHORT_MEAN_DEPTHS               } from '../modules/local/cnvz/cohort_mean_depths'
+
+//
 // SUBWORKFLOWS
 //
 
@@ -39,7 +45,7 @@ include { PHARMCAT_GENOTYPING_REPORTING                                         
 include { PHARMCAT_GENOTYPING_REPORTING as PHARMCAT_GENOTYPING_REPORTING_SELECTED   } from '../subworkflows/local/pharmcat_genotyping_reporting'
 include { TARGET_DEPTH                                                              } from '../subworkflows/local/target_depth'
 include { CYP2D6_CALLING                                                            } from '../subworkflows/local/cyp2d6_calling'
-//include { CNV_CALLING                                                             } from '../subworkflows/local/cnv_calling'
+include { CNV_CALLING                                                               } from '../subworkflows/local/cnv_calling'
 //include { HLA_CALLING                                                             } from '../subworkflows/local/hla_calling'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -289,12 +295,31 @@ workflow PRECISIONPGX {
 
     if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('cnv_calling'))){
         // Input QC_BAM.out.target_depth_tsv
-        /*
+        
+        // Prepare for CNV calling: calculate cohort means or set path to precalculated means 
+        if (params.use_cohort_cn_means){
+            //Calculate cn_means from analyzed cohort
+            cohort_mean_depths_input = QC_BAM.out.target_depth_tsv.map { meta, tsv -> [ tsv ]}.collect()
+            //Debug print
+            cohort_mean_depths_input.view { "collected cohort mean depths input: $it" }
+
+            COHORT_MEAN_DEPTHS (
+                cohort_mean_depths_input
+            )
+            cn_means_path = COHORT_MEAN_DEPTHS.out.cohort_means
+        }
+        else {
+            cn_means_path = params.cn_means
+        }
+
+        //Input: target depths, vcf, target bed (without extra padding), reference mean values
         CNV_CALLING (
-            QC_BAM.out.target_depth_tsv
+            QC_BAM.out.target_depth_tsv,
+            ch_filtered_haplotypes.filtered_vcf,
+            ch_target_bed_unprocessed,
+            cn_means_path
         )
-        .set { ch_cnvcalls }
-        */
+        .set { ch_cnvcalls } 
     }
 
     /*
