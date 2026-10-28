@@ -1,0 +1,18 @@
+# Environment for launching PrecisionPGx and creating its test data.
+#
+# Only for launching with a pinned nextflow version (tested at CGU)
+# the rest of the pipeline runs as intended and written.
+#
+#   conda env create -f environment.yml
+#   conda activate precisionpgx
+#
+# Nextflow is pinned to 25.10: 25.04 and older can no longer download the
+# nf-schema plugin.
+name: precisionpgx
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::nextflow=25.10.4
+  - bioconda::samtools=1.21
+  - conda-forge::curl

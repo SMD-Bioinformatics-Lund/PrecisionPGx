@@ -76,7 +76,14 @@ This document includes an overview of the pipeline and instructions for how to i
 
 ## Requirements
 
-Nextflow >=25.04.0
+Nextflow 25.10. Older versions can no longer download the `nf-schema` plugin.
+
+[environment.yml](../environment.yml) installs Nextflow 25.10.4 (with Java 17) and samtools:
+
+```
+conda env create -f environment.yml
+conda activate precisionpgx
+```
 
 Container technology: Docker, Singularity, Apptainer, Podman, Shifter or Charliecloud. *Only singularity tested*
 
@@ -315,7 +322,34 @@ Each label has a defined resource usage in `conf/base.config`
 
 ## Run the pipeline with test data
 
-*Not available yet.*
+The test data is one sample, GIAB HG002, restricted to the PGx target regions (~66 kb). Full GRCh38 and  PharmCAT references are also needed. Create everything once with:
+
+```
+bash test-datasets/make_test_data.sh
+```
+
+This needs `samtools` (>= 1.10) and `curl`. It downloads a few MB of reads from GIAB, plus the GRCh38 and PharmCAT references (~0.9 GB each), into `test-datasets/data/`. If a GRCh38 no-alt FASTA with `chr` names is already available, use it with `-f /path/to/genome.fa` instead of downloading one. Write the data somewhere else with `-o /path/to/dir`, and then add `--pipelines_testdata_base_path /path/to/dir` when running the pipeline.
+
+To get a matching Nextflow and samtools regardless of what the cluster has installed, use the conda environment in the repo (see [Requirements](#requirements)):
+
+```
+conda env create -f environment.yml
+conda activate precisionpgx
+```
+
+There are two test profiles:
+
+| Profile | Input | What runs |
+|---|---|---|
+| `test_bam` | aligned BAM | Everything except alignment. Quickest check. |
+| `test` | paired FASTQ | The whole pipeline, including fastp and bwa-mem2 alignment. |
+
+```
+nextflow run . -profile test_bam,singularity --outdir results_test_bam
+nextflow run . -profile test,singularity --outdir results_test
+```
+
+The `test` profile builds bwa and bwa-mem2 indices for the full genome unless existing ones are given with `--bwa` and `--bwamem2`. Both profiles use DeepVariant, and `min_dp` is set to 20 as the test data is ~60x WGS.
 
 ## Run the pipeline with input data 
 
