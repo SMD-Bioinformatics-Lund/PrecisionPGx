@@ -76,7 +76,10 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
             .set{ bams }
 
         // If there are no samples to merge, skip the process
-        SAMTOOLS_MERGE ( bams.multiple, ch_genome_fasta.combine(ch_genome_fai.map { _meta, fai -> fai }))
+        SAMTOOLS_MERGE (
+            bams.multiple.map { meta, bam -> [meta, bam, []] },
+            ch_genome_fasta.combine(ch_genome_fai.map { _meta, fai -> fai }).map { meta, fasta, fai -> [meta, fasta, fai, []] }
+        )
         prepared_bam = bams.single.mix(SAMTOOLS_MERGE.out.bam)
 
         // GET ALIGNMENT FROM SELECTED CONTIGS
