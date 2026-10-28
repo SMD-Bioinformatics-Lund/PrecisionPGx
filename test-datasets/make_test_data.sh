@@ -47,49 +47,61 @@ OUTDIR="$(cd "${OUTDIR}" && pwd)"
 cd "${OUTDIR}"
 
 #
-# 1. Reads over the PGx targets
-#
-if [[ ! -s "${SAMPLE}.pgx.bam.bai" ]]; then
-    echo "[1/4] Extracting ${SAMPLE} reads over PGx targets"
-    awk 'BEGIN{OFS="\t"} {s=$2-500; if (s<0) s=0; print $1, s, $3+500}' "${TARGET_BED}" > regions.bed
-    # htslib downloads the remote .bai into the working directory
-    samtools view -b -M -L regions.bed -o "${SAMPLE}.unsorted.bam" "${GIAB_BAM}"
-    samtools sort -o "${SAMPLE}.pgx.bam" "${SAMPLE}.unsorted.bam"
-    samtools index -o "${SAMPLE}.pgx.bam.bai" "${SAMPLE}.pgx.bam"
-    rm -f "${SAMPLE}.unsorted.bam" HG002.GRCh38.60x.1.bam.bai
-else
-    echo "[1/4] ${SAMPLE}.pgx.bam exists, skipping"
-fi
-
-#
-# 2. FASTQ pair from the same reads (pairs with a mate outside the targets are dropped)
-#
-if [[ ! -s "${SAMPLE}_R2.fastq.gz" ]]; then
-    echo "[2/4] Converting to paired FASTQ"
-    samtools collate -u -O "${SAMPLE}.pgx.bam" "${SAMPLE}.collate" \
-        | samtools fastq -n -1 "${SAMPLE}_R1.fastq.gz" -2 "${SAMPLE}_R2.fastq.gz" -0 /dev/null -s /dev/null -
-else
-    echo "[2/4] FASTQ files exist, skipping"
-fi
-
-#
-# 3. GRCh38 reference genome
+# 1. GRCh38 reference genome
 #
 mkdir -p reference
 if [[ -n "${FASTA}" ]]; then
-    echo "[3/4] Linking existing reference ${FASTA}"
+    echo "[1/4] Linking existing reference ${FASTA}"
     ln -sf "$(cd "$(dirname "${FASTA}")" && pwd)/$(basename "${FASTA}")" reference/genome.fa
     if [[ -s "${FASTA}.fai" ]]; then
         ln -sf "$(cd "$(dirname "${FASTA}")" && pwd)/$(basename "${FASTA}").fai" reference/genome.fa.fai
     fi
 elif [[ ! -s reference/genome.fa ]]; then
-    echo "[3/4] Downloading GRCh38 no-alt analysis set (~0.9 GB)"
+    echo "[1/4] Downloading GRCh38 no-alt analysis set (~0.9 GB)"
     curl -fL --retry 3 -o reference/genome.fa.gz "${GRCH38_URL}"
     gunzip reference/genome.fa.gz
 else
-    echo "[3/4] reference/genome.fa exists, skipping"
+    echo "[1/4] reference/genome.fa exists, skipping"
 fi
 [[ -s reference/genome.fa.fai ]] || samtools faidx reference/genome.fa
+
+#
+# 2. Reads over the PGx targets
+#
+# Picard and GATK require the
+# BAM header to match the reference exactly, so the header is rebuilt from the
+# reference .fai, dropping reads whose mate maps to a contig not in the reference.
+#
+if [[ ! -s "${SAMPLE}.pgx.bam.bai" ]]; then
+    echo "[2/4] Extracting ${SAMPLE} reads over PGx targets"
+    awk 'BEGIN{OFS="\t"} {s=$2-500; if (s<0) s=0; print $1, s, $3+500}' "${TARGET_BED}" > regions.bed
+    # htslib downloads the remote .bai into the working directory
+    samtools view -b -M -L regions.bed -o "${SAMPLE}.giab.bam" "${GIAB_BAM}"
+    {
+        printf '@HD\tVN:1.6\tSO:unsorted\n'
+        awk 'BEGIN{OFS="\t"} {print "@SQ", "SN:"$1, "LN:"$2}' reference/genome.fa.fai
+        samtools view -H "${SAMPLE}.giab.bam" | grep -v -e '^@HD' -e '^@SQ'
+        samtools view "${SAMPLE}.giab.bam" \
+            | awk -F'\t' 'NR==FNR {keep[$1]=1; next} ($3 in keep) && ($7=="=" || $7=="*" || ($7 in keep))' \
+                reference/genome.fa.fai -
+    } | samtools sort -u - \
+      | samtools addreplacerg -r "@RG\tID:${SAMPLE}\tSM:${SAMPLE}\tPL:ILLUMINA" -o "${SAMPLE}.pgx.bam" -
+    samtools index -o "${SAMPLE}.pgx.bam.bai" "${SAMPLE}.pgx.bam"
+    rm -f "${SAMPLE}.giab.bam" HG002.GRCh38.60x.1.bam.bai
+else
+    echo "[2/4] ${SAMPLE}.pgx.bam exists, skipping"
+fi
+
+#
+# 3. FASTQ pair from the same reads (pairs with a mate outside the targets are dropped)
+#
+if [[ ! -s "${SAMPLE}_R2.fastq.gz" ]]; then
+    echo "[3/4] Converting to paired FASTQ"
+    samtools collate -u -O "${SAMPLE}.pgx.bam" "${SAMPLE}.collate" \
+        | samtools fastq -n -1 "${SAMPLE}_R1.fastq.gz" -2 "${SAMPLE}_R2.fastq.gz" -0 /dev/null -s /dev/null -
+else
+    echo "[3/4] FASTQ files exist, skipping"
+fi
 
 #
 # 4. PharmCAT reference genome
