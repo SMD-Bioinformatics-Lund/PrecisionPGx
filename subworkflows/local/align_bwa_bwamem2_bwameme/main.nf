@@ -57,9 +57,13 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
 
         SAMTOOLS_INDEX_ALIGN ( ch_align )
 
+        // combine() returns a queue channel, which a process consumes only once.
+        // first() turns it into a value channel that every sample can reuse.
+        ch_fasta_fai = ch_genome_fasta.combine(ch_genome_fai.map { _meta, fai -> fai }).first()
+
         // Get stats for each demultiplexed read pair.
         bam_sorted_indexed = ch_align.join(SAMTOOLS_INDEX_ALIGN.out.index, failOnMismatch:true, failOnDuplicate:true)
-        SAMTOOLS_STATS ( bam_sorted_indexed, ch_genome_fasta.combine(ch_genome_fai.map { _meta, fai -> fai }) )
+        SAMTOOLS_STATS ( bam_sorted_indexed, ch_fasta_fai )
 
         // Merge multiple lane samples and index
         ch_align
@@ -78,7 +82,7 @@ workflow ALIGN_BWA_BWAMEM2_BWAMEME {
         // If there are no samples to merge, skip the process
         SAMTOOLS_MERGE (
             bams.multiple.map { meta, bam -> [meta, bam, []] },
-            ch_genome_fasta.combine(ch_genome_fai.map { _meta, fai -> fai }).map { meta, fasta, fai -> [meta, fasta, fai, []] }
+            ch_fasta_fai.map { meta, fasta, fai -> [meta, fasta, fai, []] }
         )
         prepared_bam = bams.single.mix(SAMTOOLS_MERGE.out.bam)
 
