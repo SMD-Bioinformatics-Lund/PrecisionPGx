@@ -14,7 +14,7 @@ process PHARMCAT_MATCHER {
     output:
     tuple val(meta), path("*.match.json")                                                                       ,   emit: matcher_json
     tuple val(meta), path("*.match.html")                                                     , optional: true  ,   emit: matcher_html
-    tuple val("${task.process}"), val('pharmcat'), eval("pharmcat --version | cut -f2 -d ' '"), topic: versions ,   emit: versions_pharmcat
+    tuple val("${task.process}"), val('pharmcat'), eval("pharmcat --version | tail -n 1 | cut -f2 -d ' '"), topic: versions ,   emit: versions_pharmcat
 
     when:
     task.ext.when == null || task.ext.when

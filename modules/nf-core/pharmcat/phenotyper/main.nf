@@ -12,7 +12,7 @@ process PHARMCAT_PHENOTYPER {
 
     output:
     tuple val(meta), path("*.phenotype.json")                                                                   ,   emit: phenotyper_json
-    tuple val("${task.process}"), val('pharmcat'), eval("pharmcat --version | cut -f2 -d ' '"), topic: versions ,   emit: versions_pharmcat
+    tuple val("${task.process}"), val('pharmcat'), eval("pharmcat --version | tail -n 1 | cut -f2 -d ' '"), topic: versions ,   emit: versions_pharmcat
 
     when:
     task.ext.when == null || task.ext.when

@@ -14,7 +14,7 @@ process PHARMCAT_REPORTER {
     tuple val(meta), path("*.report.json")                                                    , optional: true  ,   emit: report_json
     tuple val(meta), path("*.report.html")                                                    , optional: true  ,   emit: report_html
     tuple val(meta), path("*.report.tsv")                                                     , optional: true  ,   emit: report_tsv
-    tuple val("${task.process}"), val('pharmcat'), eval("pharmcat --version | cut -f2 -d ' '"), topic: versions ,   emit: versions_pharmcat
+    tuple val("${task.process}"), val('pharmcat'), eval("pharmcat --version | tail -n 1 | cut -f2 -d ' '"), topic: versions ,   emit: versions_pharmcat
 
     when:
     task.ext.when == null || task.ext.when
