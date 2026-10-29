@@ -93,12 +93,22 @@ else
 fi
 
 #
-# 3. FASTQ pair from the same reads (pairs with a mate outside the targets are dropped)
+# 3. FASTQ pairs from the same reads (pairs with a mate outside the targets are dropped)
 #
-if [[ ! -s "${SAMPLE}_R2.fastq.gz" ]]; then
-    echo "[3/4] Converting to paired FASTQ"
+# The read pairs are split alternately into two lanes, so the test profile also
+# covers merging of multi-lane samples.
+#
+if [[ ! -s "${SAMPLE}_L002_R2.fastq.gz" ]]; then
+    echo "[3/4] Converting to paired FASTQ, split into two lanes"
     samtools collate -u -O "${SAMPLE}.pgx.bam" "${SAMPLE}.collate" \
-        | samtools fastq -n -1 "${SAMPLE}_R1.fastq.gz" -2 "${SAMPLE}_R2.fastq.gz" -0 /dev/null -s /dev/null -
+        | samtools fastq -n -1 "${SAMPLE}_R1.fastq" -2 "${SAMPLE}_R2.fastq" -0 /dev/null -s /dev/null -
+    for READ in R1 R2; do
+        awk -v out="${SAMPLE}" -v read="${READ}" \
+            '{ lane = int((NR - 1) / 4) % 2 + 1; print > (out "_L00" lane "_" read ".fastq") }' \
+            "${SAMPLE}_${READ}.fastq"
+        rm "${SAMPLE}_${READ}.fastq"
+    done
+    gzip -f "${SAMPLE}"_L00[12]_R[12].fastq
 else
     echo "[3/4] FASTQ files exist, skipping"
 fi
@@ -128,7 +138,8 @@ ln -sf "${PC_FASTA}.gzi" pharmcat_reference.fna.bgz.gzi
 #
 cat > samplesheet_fastq.csv <<EOF
 sample,case_id,type,lane,fastq_1,fastq_2,seq_type,genes
-${SAMPLE},${SAMPLE},N,L001,${OUTDIR}/${SAMPLE}_R1.fastq.gz,${OUTDIR}/${SAMPLE}_R2.fastq.gz,dna,"${GENES}"
+${SAMPLE},${SAMPLE},N,L001,${OUTDIR}/${SAMPLE}_L001_R1.fastq.gz,${OUTDIR}/${SAMPLE}_L001_R2.fastq.gz,dna,"${GENES}"
+${SAMPLE},${SAMPLE},N,L002,${OUTDIR}/${SAMPLE}_L002_R1.fastq.gz,${OUTDIR}/${SAMPLE}_L002_R2.fastq.gz,dna,"${GENES}"
 EOF
 
 cat > samplesheet_bam.csv <<EOF

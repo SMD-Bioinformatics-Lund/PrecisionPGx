@@ -342,7 +342,7 @@ There are two test profiles:
 | Profile | Input | What runs |
 |---|---|---|
 | `test_bam` | aligned BAM | Everything except alignment. Quickest check. |
-| `test` | paired FASTQ | The whole pipeline, including fastp and bwa-mem2 alignment. |
+| `test` | paired FASTQ, two lanes | The whole pipeline, including fastp, bwa-mem2 alignment and merging of lanes. |
 
 ```
 nextflow run . -profile test_bam,singularity --outdir results_test_bam
