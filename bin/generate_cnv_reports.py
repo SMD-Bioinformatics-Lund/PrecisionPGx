@@ -53,8 +53,8 @@ def get_vafs(vcf_file, sample_name, output_dir):
             #Create values array
             thisvalues = thiscolumns[9].split(":")
 
-            #Don't consider calls with GT = 0/0
-            if not(thisvalues[0] == "0/0"):
+            #Don't consider calls with GT = 0/0 or GT = ./.
+            if not(thisvalues[0] == "0/0" or thisvalues[0] == "./."):
                 #Create FORMAT array
                 thisformat = thiscolumns[8].split(":")
                 #Get the index for the DP and AD fields
@@ -69,8 +69,12 @@ def get_vafs(vcf_file, sample_name, output_dir):
                         adidx = i
                     i += 1
                 thisaltad = thisvalues[adidx].split(",")
+                if int(thisvalues[dpidx]) > 0:
+                    thisvaf = int(thisaltad[-1])/int(thisvalues[dpidx])
+                else:
+                    thisvaf = 0
                 #Add values to list
-                vaf_list.append((thiscolumns[0], thiscolumns[1], thiscolumns[3], thiscolumns[4], thiscolumns[5], thiscolumns[6], thiscolumns[8], thiscolumns[9], int(thisaltad[-1])/int(thisvalues[dpidx])))
+                vaf_list.append((thiscolumns[0], thiscolumns[1], thiscolumns[3], thiscolumns[4], thiscolumns[5], thiscolumns[6], thiscolumns[8], thiscolumns[9], thisvaf))
 
     #Save vaf list
     vaf_file = os.path.join(output_dir, f"{sample_name}.vafs.txt")
