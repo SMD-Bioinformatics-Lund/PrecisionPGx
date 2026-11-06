@@ -292,8 +292,8 @@ workflow PRECISIONPGX {
         CNV CALLING
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-
-    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('cnv_calling'))){
+    // Skip the CNV calling subworkflow if both cnv_calling and cyp2d6_calling are skipped
+    if (!(params.skip_subworkflows && params.skip_subworkflows.split(',').contains('cnv_calling') && params.skip_subworkflows.split(',').contains('cyp2d6_calling'))){
         // Input QC_BAM.out.target_depth_tsv
         
         // Prepare for CNV calling: calculate cohort means or set path to precalculated means 

@@ -565,7 +565,7 @@ def main():
     parser.add_argument("-cn","--input_cn_threshold", type=float, help="Threshold for the copy number deviation from 2")
     parser.add_argument("-p","--input_prop_threshold", type=float, help="Proportion threshold")
     parser.add_argument("-rc","--report_cyp2d6", type=str, help="true/false")
-    parser.add_argument("-g","--selected_genes", type=str, help="comma-separated list of genes")
+    parser.add_argument("-g","--selected_genes", nargs='?', const="", type=str, help="comma-separated list of genes")
     parser.add_argument("-o","--output_folder", type=str, help="Folder to store the report output")
     
     args = parser.parse_args()
