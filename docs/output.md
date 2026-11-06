@@ -11,6 +11,10 @@ The directories listed below will be created in the results directory after the 
 - [PrecisionPGx-outputdir](#precisionpgx-output)
   - [alignment](#alignment)
   - [CYP2D6](#cyp2d6)
+  - [CNV](#cnv)
+    - [data](#data)
+    - [cohort_means](#cohort_means)
+    - [reports](#reports)
   - [HLA](#hla)
   - [multiqc](#multiqc)
     - [multiqc data](#multiqc_data)
@@ -50,6 +54,48 @@ CYP2D6 genotyping output.
   - `*.pharmcat.CYP2D6.match.json`: PharmCAT matcher report in json format.
   - `*.pharmcat.CYP2D6.phenotype.json`: PharmCAT phenotyper report in json format.
   </details>
+
+### `cnv`
+
+CNV calling output. Data, cohort means and reports in subfolders.
+
+#### `data`
+
+CNV calculations. Read depth, proportional read depth, copy number and z-score in all positions included in the target bed file.
+
+<details markdown="1">
+<summary>Output files:</summary>
+
+- `{outputdir}/cnv/data`
+  - `*.cnvz.csv`: CSV file.
+</details>
+
+#### `cohort_means`
+
+Cohort mean values in all positions included in the target bed file. Calculated and used for copy number calculations if parameter `use_cohort_means = true`. The output file is named using the <trace_report_suffix>: YYYY-MM-DD_XX-XX-XX (same as used in the names of the `pipeline_info` files).
+
+<details markdown="1">
+<summary>Output files:</summary>
+
+- `{outputdir}/cnv/cohort_means`
+  - `<trace_report_suffix>.mean_proportional_depths.csv`: CSV file.
+</details>
+
+#### `reports`
+
+Figures and text reports for the genes given in the column `cnv_genes` in the samplesheet. Two figures and one text report are created for each reported gene. 
+
+<details markdown="1">
+<summary>Output files:</summary>
+
+- `{outputdir}/cnv/reports`
+  - `*.<gene name>.chrX_XXXXXXX_XXXXXXX.png`: PNG file.
+  - `*.<gene name>.exon_means.png`: PNG file.
+  - `*.<gene name>.exon_means.txt`: TXT file.
+  - `*.CYP2D6-D8.chr22_42123143_42155250.png`: PNG file.
+  - `*.CYP2D6-D8.exon_means.png`: PNG file.
+  - `*.CYP2D6-D8.exon_means.txt`: TXT file.
+</details>
 
 ### `HLA`
 

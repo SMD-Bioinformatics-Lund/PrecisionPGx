@@ -1,0 +1,11 @@
+name: calculate_cn
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - conda-forge::pandas>=1.3.1
+  - conda-forge::numpy
+  - conda-forge::argparse
+  - conda-forge::datetime
+  - conda-forge::os
